@@ -43,7 +43,8 @@ public class UpgradeSystem {
     }
 
     public double xpForNextLevel() {
-        return GameConfig.XP_BASE_REQUIREMENT + level * GameConfig.XP_LEVEL_SCALAR;
+        return GameConfig.XP_BASE_REQUIREMENT + level * GameConfig.XP_LEVEL_SCALAR
+            + level * level * GameConfig.XP_QUADRATIC_FACTOR;
     }
 
     public void generateChoices() {
@@ -95,7 +96,7 @@ public class UpgradeSystem {
             }
         }
 
-        int stat = game.rand(3);
+        int stat = game.rand(4);
         if (stat == 0) {
             return new UpgradeDef("Swift Boots", "Move speed +10%",
                 new UpgradeDef.UpgradeAction() {
@@ -112,12 +113,21 @@ public class UpgradeSystem {
                         g.player.damageMultiplier *= 1.15;
                     }
                 });
-        } else {
+        } else if (stat == 2) {
             return new UpgradeDef("Magnet", "Pickup range +20%",
                 new UpgradeDef.UpgradeAction() {
                     @Override
                     public void apply(SurvivalGame g) {
                         g.player.pickupRangeMultiplier *= 1.2;
+                    }
+                });
+        } else {
+            return new UpgradeDef("Healing Light", "Restore 30% of max HP",
+                new UpgradeDef.UpgradeAction() {
+                    @Override
+                    public void apply(SurvivalGame g) {
+                        double healAmount = g.player.maxHealth * 0.30;
+                        g.player.health = Math.min(g.player.maxHealth, g.player.health + healAmount);
                     }
                 });
         }

@@ -17,6 +17,8 @@ public class SurvivalGame extends GameEngine {
     public static final int STATE_WEAPON_SWAP = 7;
     public static final int STATE_TIER_UP = 8;
     public static final int STATE_INTRO = 9;
+    public static final int STATE_PAUSED = 10;
+    public static final int STATE_HELP = 11;
 
     int gameState = STATE_MENU;
     double introTimer;
@@ -125,6 +127,10 @@ public class SurvivalGame extends GameEngine {
         } else if (gameState == STATE_INTRO) {
             updateIntro(dt);
             vfx.update(dt);
+        } else if (gameState == STATE_PAUSED) {
+            // frozen — no game updates
+        } else if (gameState == STATE_HELP) {
+            vfx.update(dt);
         } else if (gameState == STATE_MENU || gameState == STATE_CHAR_SELECT
                 || gameState == STATE_VICTORY || gameState == STATE_DEFEAT) {
             vfx.update(dt);
@@ -185,6 +191,11 @@ public class SurvivalGame extends GameEngine {
 
         if (gameState == STATE_INTRO) {
             renderIntro();
+        } else if (gameState == STATE_PAUSED) {
+            renderWorld();
+            renderPauseOverlay();
+        } else if (gameState == STATE_HELP) {
+            renderHelpScreen();
         } else if (gameState == STATE_MENU) {
             renderMenu();
         } else if (gameState == STATE_CHAR_SELECT) {
@@ -357,12 +368,13 @@ public class SurvivalGame extends GameEngine {
         changeColor(new Color(188, 165, 112));
         drawText(337, 178, "A PIXEL MEDIEVAL SURVIVAL CHRONICLE", "Arial", 15);
 
-        drawMenuButton(320, 236, 320, 62, "START ADVENTURE", menuHoverButton == 0, new Color(130, 86, 42));
-        drawMenuButton(320, 316, 320, 62, "SETTINGS", menuHoverButton == 1, new Color(86, 96, 128));
-        drawMenuButton(320, 396, 320, 62, "EXIT KINGDOM", menuHoverButton == 2, new Color(126, 64, 64));
+        drawMenuButton(320, 216, 320, 52, "START ADVENTURE", menuHoverButton == 0, new Color(130, 86, 42));
+        drawMenuButton(320, 286, 320, 52, "SETTINGS", menuHoverButton == 1, new Color(86, 96, 128));
+        drawMenuButton(320, 356, 320, 52, "CONTROLS", menuHoverButton == 3, new Color(80, 120, 100));
+        drawMenuButton(320, 426, 320, 52, "EXIT KINGDOM", menuHoverButton == 2, new Color(126, 64, 64));
 
         changeColor(new Color(214, 201, 165));
-        drawText(338, 500, "KEYS: [1/ENTER] START   [S] SETTINGS   [ESC] EXIT", "Arial", 14);
+        drawText(280, 508, "KEYS: [1/ENTER] START   [S] SETTINGS   [H] CONTROLS   [ESC] EXIT", "Arial", 13);
         if (!menuSettingsOpen) {
             changeColor(new Color(186, 172, 133, 120));
             drawSolidRectangle(320, 236, 320 * pulse, 4);
@@ -564,6 +576,51 @@ public class SurvivalGame extends GameEngine {
         drawSolidRectangle(220, 270, 520, 120);
         changeColor(new Color(255, 80, 80));
         drawBoldText(370, 345, "BOSS APPROACHING", "Arial", 34);
+    }
+
+    private void renderPauseOverlay() {
+        changeColor(new Color(0, 0, 0, 150));
+        drawSolidRectangle(0, 0, width(), height());
+        changeColor(new Color(230, 210, 150));
+        drawBoldText(300, 310, "PAUSED", "Arial", 48);
+        changeColor(new Color(200, 190, 160));
+        drawText(260, 360, "Press P to resume", "Arial", 20);
+        drawText(260, 390, "Press ESC to quit", "Arial", 20);
+    }
+
+    private void renderHelpScreen() {
+        drawMenuBackdrop();
+        int cx = width() / 2;
+
+        drawEmbossedText(cx - 160, 80, "CONTROLS", 42, new Color(235, 220, 170), new Color(66, 50, 33));
+
+        int y = 166;
+        changeColor(new Color(28, 24, 40, 190));
+        drawSolidRectangle(180, y - 10, 600, 380);
+        changeColor(new Color(100, 86, 63));
+        drawRectangle(180, y - 10, 600, 380, 3);
+
+        String[][] entries = {
+            {"W A S D", "Move your character"},
+            {"SPACE", "Cast Ultimate skill (unlocked at Tier 3)"},
+            {"P", "Pause / Resume the game"},
+            {"ESC", "Return to menu / Exit"},
+            {"1  2  3", "Select upgrade or weapon swap slot"},
+            {"ENTER", "Confirm / Start game"},
+            {"H", "Open this controls guide"},
+            {"L", "Debug: Gain XP (testing only)"},
+        };
+
+        for (int i = 0; i < entries.length; i++) {
+            int ey = y + i * 44;
+            changeColor(new Color(255, 220, 80));
+            drawBoldText(210, ey + 18, entries[i][0], "Arial", 18);
+            changeColor(new Color(200, 195, 175));
+            drawText(420, ey + 18, entries[i][1], "Arial", 16);
+        }
+
+        changeColor(new Color(160, 150, 130));
+        drawCenteredText(0, y + 400, width(), "Press ESC or H to return", FONT_BODY, 14);
     }
 
     private void renderEndScreen(boolean victory) {
@@ -971,10 +1028,22 @@ public class SurvivalGame extends GameEngine {
 
         if (code == KeyEvent.VK_ESCAPE) {
             if (gameState == STATE_PLAYING || gameState == STATE_UPGRADE_PAUSE || gameState == STATE_BOSS_INTRO) {
+                gameState = STATE_PAUSED;
+            } else if (gameState == STATE_PAUSED) {
+                gameState = STATE_MENU;
+            } else if (gameState == STATE_HELP) {
                 gameState = STATE_MENU;
             } else if (gameState == STATE_MENU) {
                 if (menuSettingsOpen) menuSettingsOpen = false;
                 else System.exit(0);
+            }
+        }
+
+        if (code == KeyEvent.VK_P) {
+            if (gameState == STATE_PLAYING || gameState == STATE_UPGRADE_PAUSE || gameState == STATE_BOSS_INTRO) {
+                gameState = STATE_PAUSED;
+            } else if (gameState == STATE_PAUSED) {
+                gameState = STATE_PLAYING;
             }
         }
 
@@ -1007,6 +1076,11 @@ public class SurvivalGame extends GameEngine {
             } else {
                 if (code == KeyEvent.VK_1 || code == KeyEvent.VK_ENTER) gameState = STATE_INTRO;
                 if (code == KeyEvent.VK_S) menuSettingsOpen = true;
+                if (code == KeyEvent.VK_H) gameState = STATE_HELP;
+            }
+        } else if (gameState == STATE_HELP) {
+            if (code == KeyEvent.VK_H || code == KeyEvent.VK_ESCAPE) {
+                gameState = STATE_MENU;
             }
         } else if (gameState == STATE_CHAR_SELECT) {
             if (code == KeyEvent.VK_ESCAPE) {
@@ -1322,9 +1396,10 @@ public class SurvivalGame extends GameEngine {
             return;
         }
         menuHoverButton = -1;
-        if (inRect(mouseX, mouseY, 320, 236, 320, 62)) menuHoverButton = 0;
-        else if (inRect(mouseX, mouseY, 320, 316, 320, 62)) menuHoverButton = 1;
-        else if (inRect(mouseX, mouseY, 320, 396, 320, 62)) menuHoverButton = 2;
+        if (inRect(mouseX, mouseY, 320, 216, 320, 52)) menuHoverButton = 0;
+        else if (inRect(mouseX, mouseY, 320, 286, 320, 52)) menuHoverButton = 1;
+        else if (inRect(mouseX, mouseY, 320, 356, 320, 52)) menuHoverButton = 3;
+        else if (inRect(mouseX, mouseY, 320, 426, 320, 52)) menuHoverButton = 2;
     }
 
     private void handleMenuClick() {
@@ -1338,6 +1413,7 @@ public class SurvivalGame extends GameEngine {
         }
         if (menuHoverButton == 0) gameState = STATE_INTRO;
         else if (menuHoverButton == 1) menuSettingsOpen = true;
+        else if (menuHoverButton == 3) gameState = STATE_HELP;
         else if (menuHoverButton == 2) System.exit(0);
     }
 

@@ -19,8 +19,9 @@ public final class GameConfig {
     public static final double PICKUP_RADIUS = 5.0;
     public static final double PICKUP_MAGNET_STRENGTH = 400.0;
 
-    public static final double XP_BASE_REQUIREMENT = 5.0;
-    public static final double XP_LEVEL_SCALAR = 3.0;
+    public static final double XP_BASE_REQUIREMENT = 3.0;
+    public static final double XP_LEVEL_SCALAR = 1.5;
+    public static final double XP_QUADRATIC_FACTOR = 0.08;
 
     public static final int MAX_ENEMIES = 240;
     public static final int MAX_PROJECTILES = 320;
