@@ -16,8 +16,12 @@ public class SurvivalGame extends GameEngine {
     public static final int STATE_DEFEAT = 6;
     public static final int STATE_WEAPON_SWAP = 7;
     public static final int STATE_TIER_UP = 8;
+    public static final int STATE_INTRO = 9;
 
     int gameState = STATE_MENU;
+    double introTimer;
+    int introPhase;
+    double introScrollOffset;
     int swapPendingWeaponId;
     WeaponRarity swapPendingRarity;
     double tierUpTimer;
@@ -53,6 +57,12 @@ public class SurvivalGame extends GameEngine {
     private int levelMilestoneNotice = -1;
     private double levelMilestoneNoticeTimer;
 
+    private int killCount;
+    private int totalKillScore;
+    private boolean bossKilled;
+    private boolean fullHealthBonusEarned;
+    private int highestLevelReached;
+
     public static void main(String[] args) {
         createGame(new SurvivalGame(), 60);
     }
@@ -75,6 +85,9 @@ public class SurvivalGame extends GameEngine {
         collisionSystem = new CollisionSystem(this);
         weaponManager = new WeaponManager(this);
         upgradeSystem = new UpgradeSystem(this);
+        introTimer = 0;
+        introPhase = 0;
+        introScrollOffset = 0;
     }
 
     @Override
@@ -109,6 +122,9 @@ public class SurvivalGame extends GameEngine {
             }
         } else if (gameState == STATE_WEAPON_SWAP) {
             vfx.update(dt);
+        } else if (gameState == STATE_INTRO) {
+            updateIntro(dt);
+            vfx.update(dt);
         } else if (gameState == STATE_MENU || gameState == STATE_CHAR_SELECT
                 || gameState == STATE_VICTORY || gameState == STATE_DEFEAT) {
             vfx.update(dt);
@@ -129,6 +145,10 @@ public class SurvivalGame extends GameEngine {
         updatePlayerAuraVfx(dt);
         player.clampToWorld();
         camera.follow(player.x, player.y, dt);
+
+        if (upgradeSystem.level() > highestLevelReached) {
+            highestLevelReached = upgradeSystem.level();
+        }
 
         spawner.update(dt * combatPaceMultiplier());
         weaponManager.update(dt);
@@ -163,7 +183,9 @@ public class SurvivalGame extends GameEngine {
         changeBackgroundColor(GameConfig.BG_DARK);
         clearBackground(width(), height());
 
-        if (gameState == STATE_MENU) {
+        if (gameState == STATE_INTRO) {
+            renderIntro();
+        } else if (gameState == STATE_MENU) {
             renderMenu();
         } else if (gameState == STATE_CHAR_SELECT) {
             renderCharSelect();
@@ -308,6 +330,22 @@ public class SurvivalGame extends GameEngine {
         if (levelMilestoneNoticeTimer > 0 && levelMilestoneNotice > 0 && gameState != STATE_TIER_UP) {
             renderLevelMilestoneBanner(levelMilestoneNotice, levelMilestoneNoticeTimer / 2.2);
         }
+
+        int sbx = 728;
+        int sby = 570;
+        int sbw = 218;
+        int sbh = 82;
+        changeColor(new Color(16, 14, 20, 190));
+        drawSolidRectangle(sbx, sby, sbw, sbh);
+        changeColor(new Color(112, 95, 68));
+        drawRectangle(sbx, sby, sbw, sbh, 2);
+        drawEmbossedText(sbx + 8, sby + 14, "SCORE", 14, new Color(220, 205, 165), new Color(68, 56, 38));
+        int currentScore = totalKillScore + (int)Math.floor(runTimeSeconds * GameConfig.SCORE_SURVIVAL_PER_SECOND);
+        changeColor(new Color(255, 220, 80));
+        drawBoldText(sbx + 8, sby + 38, String.valueOf(currentScore), "Georgia", 26);
+        changeColor(new Color(180, 170, 150));
+        drawText(sbx + 8, sby + 58, "Kills: " + killCount, "Arial", 12);
+        drawText(sbx + 108, sby + 58, "Time: " + formatTime(runTimeSeconds), "Arial", 12);
     }
 
     private void renderMenu() {
@@ -530,10 +568,44 @@ public class SurvivalGame extends GameEngine {
 
     private void renderEndScreen(boolean victory) {
         changeColor(victory ? new Color(100, 230, 120) : new Color(230, 100, 100));
-        drawBoldText(380, 300, victory ? "VICTORY" : "DEFEAT", "Arial", 64);
+        drawBoldText(380, 220, victory ? "VICTORY" : "DEFEAT", "Arial", 64);
+
+        int survivalScore = (int)Math.floor(runTimeSeconds * GameConfig.SCORE_SURVIVAL_PER_SECOND);
+        int bossBonus = bossKilled ? GameConfig.SCORE_BOSS_KILL : 0;
+        int fullHpBonus = fullHealthBonusEarned ? GameConfig.SCORE_FULL_HP_BONUS : 0;
+        int finalScore = calculateFinalScore();
+
+        changeColor(new Color(255, 220, 80));
+        drawBoldText(320, 280, "TOTAL SCORE: " + finalScore, "Arial", 32);
+
+        int y = 318;
+        changeColor(new Color(200, 200, 200));
+        drawText(280, y, "Kills: " + killCount + " enemies  —  " + totalKillScore + " pts", "Arial", 16);
+        y += 22;
+        drawText(280, y, "Survival Time: " + formatTime(runTimeSeconds) + "  —  +" + survivalScore + " pts", "Arial", 16);
+        y += 22;
+        if (bossKilled) {
+            changeColor(new Color(255, 180, 80));
+            drawText(280, y, "Boss Kill  —  +" + bossBonus + " pts", "Arial", 16);
+            y += 22;
+        }
+        if (fullHealthBonusEarned) {
+            changeColor(new Color(120, 255, 120));
+            drawText(280, y, "Full HP Completion  —  +" + fullHpBonus + " pts", "Arial", 16);
+            y += 22;
+        }
+        double milestoneMult = 1.0;
+        if (highestLevelReached >= 75) milestoneMult = GameConfig.SCORE_MILESTONE_LV75;
+        else if (highestLevelReached >= 50) milestoneMult = GameConfig.SCORE_MILESTONE_LV50;
+        else if (highestLevelReached >= 25) milestoneMult = GameConfig.SCORE_MILESTONE_LV25;
+        if (milestoneMult > 1.0) {
+            changeColor(new Color(180, 160, 255));
+            drawText(280, y, "Level Milestone x" + String.format("%.1f", milestoneMult) + "  (reached Lv " + highestLevelReached + ")", "Arial", 16);
+            y += 22;
+        }
+
         changeColor(Color.WHITE);
-        drawText(360, 360, "Survival Time: " + formatTime(runTimeSeconds), "Arial", 26);
-        drawText(300, 420, "Press SPACE to restart", "Arial", 28);
+        drawText(300, y + 16, "Press SPACE to restart", "Arial", 28);
     }
 
     private String formatTime(double sec) {
@@ -543,12 +615,287 @@ public class SurvivalGame extends GameEngine {
         return String.format("%02d:%02d", mm, ss);
     }
 
+    private void startIntro() {
+        introTimer = 0;
+        introPhase = 0;
+        introScrollOffset = height();
+        gameState = STATE_INTRO;
+    }
+
+    private void updateIntro(double dt) {
+        introTimer += dt;
+        double scrollSpeed = 38;
+        introScrollOffset -= scrollSpeed * dt;
+
+        if (introTimer > 1.5 && introPhase == 0) {
+            introPhase = 1;
+        }
+        if (introTimer > 7.0 && introPhase == 1) {
+            introPhase = 2;
+        }
+        if (introTimer > 14.5 && introPhase == 2) {
+            introPhase = 3;
+        }
+        if (introTimer > 22.0) {
+            gameState = STATE_CHAR_SELECT;
+        }
+    }
+
+    private void renderIntro() {
+        int W = width();
+        int H = height();
+        double t = introTimer;
+
+        for (int i = 0; i < H; i++) {
+            double ratio = (double)i / H;
+            int r = (int)(8 + ratio * 18);
+            int g = (int)(6 + ratio * 20);
+            int b = (int)(16 + ratio * 32);
+            changeColor(r, g, b);
+            drawSolidRectangle(0, i, W, 1);
+        }
+
+        int[] starSeeds = new int[] {17, 42, 73, 101, 138, 179, 211, 259, 301, 344, 389, 423, 467, 512, 556, 601, 47, 88, 124, 166, 198, 243, 288, 327, 371, 415, 458, 503, 548, 586};
+        for (int i = 0; i < starSeeds.length; i++) {
+            int sx = (starSeeds[i] * 37 + 131) % W;
+            int sy = (starSeeds[i] * 53 + 271) % (H / 2);
+            double flicker = 0.5 + 0.5 * Math.sin(t * 3.0 + starSeeds[i] * 1.7);
+            int alpha = (int)(130 + flicker * 110);
+            changeColor(new Color(220, 225, 255, alpha));
+            int size = (i % 5 == 0) ? 2 : 1;
+            drawSolidRectangle(sx, sy, size, size);
+        }
+
+        int moonX = W - 130;
+        int moonY = 75;
+        changeColor(new Color(235, 228, 200, 210));
+        drawSolidCircle(moonX, moonY, 36);
+        changeColor(new Color(16, 14, 26));
+        drawSolidCircle(moonX + 10, moonY - 4, 31);
+
+        changeColor(new Color(18, 14, 24, 220));
+        int[] mtnX = new int[] {0, 60, 140, 200, 280, 370, 440, 520, 620, 710, 790, 880, 960};
+        int[] mtnH = new int[] {90, 130, 85, 150, 100, 170, 110, 140, 95, 165, 105, 145, 90};
+        for (int i = 0; i < mtnX.length - 2; i++) {
+            changeColor(new Color(18, 14, 24, 220));
+            int cx = (mtnX[i] + mtnX[i + 1]) / 2;
+            int peakY = H - 80 - mtnH[i];
+            int[] px = new int[] {mtnX[i], cx, mtnX[i + 1]};
+            int[] py = new int[] {H - 70, peakY, H - 70};
+            fillTriangle(px[0], py[0], px[1], py[1], px[2], py[2]);
+        }
+
+        changeColor(new Color(22, 16, 28));
+        drawSolidRectangle(0, H - 68, W, 68);
+
+        int cxBase = W / 2;
+        int cyBase = H - 68;
+        Color castleColor = new Color(24, 18, 30);
+        changeColor(castleColor);
+
+        drawSolidRectangle(cxBase - 50, cyBase - 140, 100, 140);
+        drawSolidRectangle(cxBase - 95, cyBase - 110, 40, 110);
+        drawSolidRectangle(cxBase + 55, cyBase - 110, 40, 110);
+        drawSolidRectangle(cxBase - 145, cyBase - 75, 30, 75);
+        drawSolidRectangle(cxBase + 115, cyBase - 75, 30, 75);
+
+        for (int i = 0; i < 5; i++) {
+            drawSolidRectangle(cxBase - 46 + i * 19, cyBase - 152, 12, 14);
+        }
+        for (int i = 0; i < 3; i++) {
+            drawSolidRectangle(cxBase - 93 + i * 14, cyBase - 122, 9, 12);
+        }
+        for (int i = 0; i < 3; i++) {
+            drawSolidRectangle(cxBase + 57 + i * 14, cyBase - 122, 9, 12);
+        }
+        for (int i = 0; i < 2; i++) {
+            drawSolidRectangle(cxBase - 143 + i * 16, cyBase - 87, 8, 12);
+            drawSolidRectangle(cxBase + 117 + i * 16, cyBase - 87, 8, 12);
+        }
+
+        changeColor(new Color(34, 24, 20));
+        drawSolidRectangle(cxBase - 16, cyBase - 52, 32, 52);
+        int gateArchY = cyBase - 52;
+        drawSolidRectangle(cxBase - 16, gateArchY, 32, 10);
+        changeColor(new Color(56, 42, 20));
+        drawSolidRectangle(cxBase - 16, gateArchY, 32, 2);
+
+        Color windowGlow = new Color(255, 200, 100, 180);
+        changeColor(windowGlow);
+        drawSolidRectangle(cxBase - 28, cyBase - 90, 10, 14);
+        drawSolidRectangle(cxBase + 18, cyBase - 90, 10, 14);
+        drawSolidRectangle(cxBase - 6, cyBase - 110, 10, 14);
+        drawSolidRectangle(cxBase - 82, cyBase - 70, 8, 12);
+        drawSolidRectangle(cxBase + 74, cyBase - 70, 8, 12);
+
+        int torchLX = cxBase - 24;
+        int torchLY = cyBase - 58;
+        changeColor(new Color(46, 36, 22));
+        drawSolidRectangle(torchLX - 1, torchLY, 3, 10);
+        double flickerA = Math.sin(t * 12.0) * 0.2 + Math.sin(t * 17.3) * 0.15;
+        int flameAlpha = (int)(180 + flickerA * 60);
+        changeColor(new Color(255, 160, 40, flameAlpha));
+        drawSolidCircle(torchLX, torchLY - 6, 5);
+        changeColor(new Color(255, 210, 80, 140));
+        drawSolidCircle(torchLX, torchLY - 5, 3);
+
+        int torchRX = cxBase + 24;
+        int torchRY = cyBase - 58;
+        changeColor(new Color(46, 36, 22));
+        drawSolidRectangle(torchRX - 1, torchRY, 3, 10);
+        double flickerB = Math.sin(t * 11.3 + 1.7) * 0.2 + Math.sin(t * 19.1) * 0.15;
+        int flameAlphaB = (int)(180 + flickerB * 60);
+        changeColor(new Color(255, 160, 40, flameAlphaB));
+        drawSolidCircle(torchRX, torchRY - 6, 5);
+        changeColor(new Color(255, 210, 80, 140));
+        drawSolidCircle(torchRX, torchRY - 5, 3);
+
+        int swordX = 110;
+        int swordY = cyBase;
+        changeColor(new Color(80, 78, 90));
+        drawSolidRectangle(swordX - 3, swordY + 10, 6, 24);
+        changeColor(new Color(180, 185, 200));
+        drawSolidRectangle(swordX - 2, swordY - 34, 4, 48);
+        changeColor(new Color(210, 215, 230));
+        drawSolidRectangle(swordX - 1, swordY - 34, 2, 46);
+        changeColor(new Color(160, 140, 90));
+        drawSolidRectangle(swordX - 12, swordY + 8, 24, 5);
+        changeColor(new Color(180, 155, 90));
+        drawSolidCircle(swordX, swordY + 7, 5);
+        double bladeGlow = 0.55 + 0.45 * Math.sin(t * 2.4);
+        changeColor(new Color(160, 200, 255, (int)(80 * bladeGlow)));
+        drawSolidRectangle(swordX - 1, swordY - 30, 2, 38);
+
+        for (int i = 0; i < 6; i++) {
+            double ex = torchLX - 6 + (i * 17 + 37) % 16;
+            double ey = torchLY - 8 - (t * 30 + i * 53) % 60;
+            double efade = 1.0 - ((t * 30 + i * 53) % 60) / 60.0;
+            if (efade > 0) {
+                changeColor(new Color(255, 150, 40, (int)(140 * efade)));
+                drawSolidRectangle((int)ex, (int)ey, 2, 2);
+            }
+        }
+
+        int textCenterX = W / 2;
+        int textY = H / 2 + 30;
+
+        if (introPhase == 0) {
+            double fadeIn = Math.min(1.0, introTimer / 1.2);
+            int alpha = (int)(fadeIn * 240);
+            drawCenteredEmbossedText(0, textY - 20, W, "CHRONICLES OF DUSK", 44, FONT_TITLE,
+                new Color(235, 220, 170, alpha), new Color(66, 50, 33, alpha));
+            changeColor(new Color(188, 165, 112, alpha));
+            drawCenteredText(0, textY + 28, W, "A tale of darkness, courage, and redemption", FONT_BODY, 15);
+        } else if (introPhase == 1) {
+            double scrollY = introScrollOffset;
+            String[] lines = new String[] {
+                "Long ago, in the war-torn lands of Dusk...",
+                "",
+                "The Kingdom of Aethelgard stood as a beacon",
+                "of hope and prosperity for all who dwelt",
+                "within its ancient walls.",
+                "",
+                "But peace is fragile, and shadows grow",
+                "in the hearts of the envious...",
+                "",
+                "From the Abyssal Rift, a tide of darkness",
+                "poured forth — orcs, wraiths, and things",
+                "far older than memory itself.",
+                "",
+                "One by one, the outer provinces fell.",
+                "The King's armies were shattered.",
+                "The great mages vanished into silence.",
+                "",
+                "Now, only a single bastion remains...",
+            };
+            int lineHeight = 22;
+            for (int i = 0; i < lines.length; i++) {
+                int ly = (int)(scrollY + i * lineHeight);
+                if (ly > H / 5 && ly < H - 40) {
+                    double lineFade = 1.0;
+                    if (ly < H / 5 + 40) lineFade = (ly - H / 5) / 40.0;
+                    if (ly > H - 120) lineFade = (H - 40 - ly) / 80.0;
+                    if (lineFade > 0.01 && !lines[i].isEmpty()) {
+                        int la = (int)(200 * Math.min(1.0, lineFade));
+                        changeColor(new Color(210, 198, 172, la));
+                        int tx = textCenterX - estimateTextWidth(lines[i], 16, false, FONT_BODY) / 2;
+                        drawText(tx, ly, lines[i], FONT_BODY, 16);
+                    }
+                }
+            }
+        } else if (introPhase == 2) {
+            double fadeIn = Math.min(1.0, (introTimer - 7.0) / 1.5);
+            int alpha = (int)(fadeIn * 220);
+            String[] lines2 = new String[] {
+                "But hope has not yet perished...",
+                "",
+                "Three champions stand ready to answer",
+                "the call of destiny.",
+                "",
+                "A warrior of unyielding courage.",
+                "A mage of boundless arcane power.",
+                "An assassin who walks in shadow.",
+                "",
+                "One of them shall rise...",
+                "and turn the tide of darkness.",
+            };
+            for (int i = 0; i < lines2.length; i++) {
+                int ly = textY - 80 + i * 24;
+                if (!lines2[i].isEmpty()) {
+                    int la = alpha;
+                    if (i < 2) la = (int)(alpha * 0.7);
+                    changeColor(new Color(210, 198, 172, la));
+                    int tx = textCenterX - estimateTextWidth(lines2[i], 16, false, FONT_BODY) / 2;
+                    drawText(tx, ly, lines2[i], FONT_BODY, 16);
+                }
+            }
+        } else if (introPhase == 3) {
+            double phaseTime = introTimer - 14.5;
+            double fadeIn = Math.min(1.0, phaseTime / 1.5);
+            int alpha = (int)(fadeIn * 240);
+
+            double flash = Math.sin(phaseTime * 4.0) * 0.5 + 0.5;
+            if (flash > 0.7) {
+                changeColor(new Color(255, 240, 200, (int)(60 * (flash - 0.7) / 0.3)));
+                drawSolidRectangle(0, 0, W, H);
+            }
+
+            drawCenteredEmbossedText(0, textY - 40, W, "THE TIME HAS COME", 40, FONT_TITLE,
+                new Color(242, 222, 170, alpha), new Color(72, 55, 34, alpha));
+            changeColor(new Color(210, 190, 150, alpha));
+            drawCenteredText(0, textY + 4, W, "Choose your champion and reclaim the fallen kingdom", FONT_BODY, 16);
+
+            if (phaseTime > 5.5) {
+                double endFade = (phaseTime - 5.5) / 2.0;
+                changeColor(new Color(255, 252, 245, (int)(endFade * 240)));
+                drawSolidRectangle(0, 0, W, H);
+            }
+        }
+
+        if (introTimer > 1.0) {
+            double hintAlpha = 110 + Math.sin(t * 2.5) * 30;
+            changeColor(new Color(160, 150, 130, (int)hintAlpha));
+            drawCenteredText(0, H - 22, W, "Press ENTER or SPACE to skip", FONT_BODY, 13);
+        }
+    }
+
+    private void fillTriangle(int x1, int y1, int x2, int y2, int x3, int y3) {
+        int[] xs = new int[] {x1, x2, x3};
+        int[] ys = new int[] {y1, y2, y3};
+        mGraphics.fillPolygon(xs, ys, 3);
+    }
+
     public void startRun(CharacterDef def) {
         runTimeSeconds = 0;
         bossIntroTimer = 0;
         playerAuraTrailTimer = 0;
         levelMilestoneNotice = -1;
         levelMilestoneNoticeTimer = 0;
+        killCount = 0;
+        totalKillScore = 0;
+        bossKilled = false;
+        fullHealthBonusEarned = false;
+        highestLevelReached = 0;
         enemies.clear();
         pickups.clear();
         projectiles.clear();
@@ -612,7 +959,11 @@ public class SurvivalGame extends GameEngine {
         if (code == KeyEvent.VK_L && gameState == STATE_PLAYING) {
             for (int i = 0; i < 8; i++) upgradeSystem.gainXP(upgradeSystem.xpForNextLevel() * 2);
         }
-        if (gameState == STATE_MENU) {
+        if (gameState == STATE_INTRO) {
+            if (code == KeyEvent.VK_ENTER || code == KeyEvent.VK_SPACE || code == KeyEvent.VK_ESCAPE) {
+                gameState = STATE_CHAR_SELECT;
+            }
+        } else if (gameState == STATE_MENU) {
             if (menuSettingsOpen) {
                 if (code == KeyEvent.VK_S || code == KeyEvent.VK_ESCAPE) {
                     menuSettingsOpen = false;
@@ -624,7 +975,7 @@ public class SurvivalGame extends GameEngine {
                     screenShakeEnabled = !screenShakeEnabled;
                 }
             } else {
-                if (code == KeyEvent.VK_1 || code == KeyEvent.VK_ENTER) gameState = STATE_CHAR_SELECT;
+                if (code == KeyEvent.VK_1 || code == KeyEvent.VK_ENTER) startIntro();
                 if (code == KeyEvent.VK_S) menuSettingsOpen = true;
             }
         } else if (gameState == STATE_CHAR_SELECT) {
@@ -955,7 +1306,7 @@ public class SurvivalGame extends GameEngine {
             }
             return;
         }
-        if (menuHoverButton == 0) gameState = STATE_CHAR_SELECT;
+        if (menuHoverButton == 0) startIntro();
         else if (menuHoverButton == 1) menuSettingsOpen = true;
         else if (menuHoverButton == 2) System.exit(0);
     }
@@ -1172,6 +1523,32 @@ public class SurvivalGame extends GameEngine {
         upgradeSystem.gainXP(amount);
     }
 
+    public void addKillScore(Enemy enemy) {
+        if (enemy.getType() == Enemy.BOSS) return;
+        killCount++;
+        double rarityMult;
+        switch (enemy.getRarity()) {
+            case Enemy.RARITY_RARE:   rarityMult = GameConfig.SCORE_RARITY_RARE; break;
+            case Enemy.RARITY_EPIC:   rarityMult = GameConfig.SCORE_RARITY_EPIC; break;
+            case Enemy.RARITY_LEGENDARY: rarityMult = GameConfig.SCORE_RARITY_LEGENDARY; break;
+            default:                  rarityMult = GameConfig.SCORE_RARITY_NORMAL; break;
+        }
+        totalKillScore += (int)Math.round(enemy.getBaseKillScore() * rarityMult);
+    }
+
+    public int calculateFinalScore() {
+        int survivalScore = (int)Math.floor(runTimeSeconds * GameConfig.SCORE_SURVIVAL_PER_SECOND);
+        int bossBonus = bossKilled ? GameConfig.SCORE_BOSS_KILL : 0;
+        int fullHpBonus = fullHealthBonusEarned ? GameConfig.SCORE_FULL_HP_BONUS : 0;
+        int subtotal = totalKillScore + survivalScore + bossBonus + fullHpBonus;
+        double milestoneMult;
+        if (highestLevelReached >= 75) milestoneMult = GameConfig.SCORE_MILESTONE_LV75;
+        else if (highestLevelReached >= 50) milestoneMult = GameConfig.SCORE_MILESTONE_LV50;
+        else if (highestLevelReached >= 25) milestoneMult = GameConfig.SCORE_MILESTONE_LV25;
+        else milestoneMult = 1.0;
+        return (int)Math.round(subtotal * milestoneMult);
+    }
+
     public void spawnEnemyNear(double x, double y, int type, double radius) {
         double angle = Math.toRadians(rand(360.0));
         double sx = x + Math.cos(angle) * radius;
@@ -1191,6 +1568,10 @@ public class SurvivalGame extends GameEngine {
     }
 
     public void onBossKilled() {
+        bossKilled = true;
+        if (player != null && player.health >= player.maxHealth) {
+            fullHealthBonusEarned = true;
+        }
         gameState = STATE_VICTORY;
     }
 

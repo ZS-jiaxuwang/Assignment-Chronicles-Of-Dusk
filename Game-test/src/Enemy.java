@@ -12,6 +12,12 @@ public class Enemy extends Entity {
     public static final int MUSHROOM = 8;
     public static final int FLYING_EYE = 9;
 
+    public static final int RARITY_NORMAL = 0;
+    public static final int RARITY_RARE = 1;
+    public static final int RARITY_EPIC = 2;
+    public static final int RARITY_LEGENDARY = 3;
+    public static final int RARITY_BOSS = 4;
+
     private final SurvivalGame game;
     private final int type;
     private final double baseSpeed;
@@ -136,6 +142,8 @@ public class Enemy extends Entity {
             game.addPickup(new Pickup(game, x, y, xpValue));
         }
 
+        game.addKillScore(this);
+
         if (type == BOSS) {
             game.onBossKilled();
         }
@@ -156,6 +164,30 @@ public class Enemy extends Entity {
 
     public int getXpValue() {
         return xpValue;
+    }
+
+    public int getRarity() {
+        switch (type) {
+            case SKELETON: case GHOST: case FLYING_EYE: return RARITY_RARE;
+            case ORC: case MUSHROOM: return RARITY_EPIC;
+            case GIANT: return RARITY_LEGENDARY;
+            case BOSS: return RARITY_BOSS;
+            default: return RARITY_NORMAL;
+        }
+    }
+
+    public int getBaseKillScore() {
+        switch (type) {
+            case BAT: return GameConfig.SCORE_BASE_BAT;
+            case SKELETON: return GameConfig.SCORE_BASE_SKELETON;
+            case GIANT: return GameConfig.SCORE_BASE_GIANT;
+            case GHOST: return GameConfig.SCORE_BASE_GHOST;
+            case ORC: return GameConfig.SCORE_BASE_ORC;
+            case GOBLIN: return GameConfig.SCORE_BASE_GOBLIN;
+            case MUSHROOM: return GameConfig.SCORE_BASE_MUSHROOM;
+            case FLYING_EYE: return GameConfig.SCORE_BASE_FLYING_EYE;
+            default: return GameConfig.SCORE_BASE_SLIME;
+        }
     }
 
     private static double radiusByType(int t) {
