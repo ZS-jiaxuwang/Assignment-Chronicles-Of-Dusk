@@ -57,6 +57,12 @@ public class SurvivalGame extends GameEngine {
     private int levelMilestoneNotice = -1;
     private double levelMilestoneNoticeTimer;
 
+    private int killCount;
+    private int totalKillScore;
+    private boolean bossKilled;
+    private boolean fullHealthBonusEarned;
+    private int highestLevelReached;
+
     public static void main(String[] args) {
         createGame(new SurvivalGame(), 60);
     }
@@ -139,6 +145,10 @@ public class SurvivalGame extends GameEngine {
         updatePlayerAuraVfx(dt);
         player.clampToWorld();
         camera.follow(player.x, player.y, dt);
+
+        if (upgradeSystem.level() > highestLevelReached) {
+            highestLevelReached = upgradeSystem.level();
+        }
 
         spawner.update(dt * combatPaceMultiplier());
         weaponManager.update(dt);
@@ -320,6 +330,22 @@ public class SurvivalGame extends GameEngine {
         if (levelMilestoneNoticeTimer > 0 && levelMilestoneNotice > 0 && gameState != STATE_TIER_UP) {
             renderLevelMilestoneBanner(levelMilestoneNotice, levelMilestoneNoticeTimer / 2.2);
         }
+
+        int sbx = 728;
+        int sby = 570;
+        int sbw = 218;
+        int sbh = 82;
+        changeColor(new Color(16, 14, 20, 190));
+        drawSolidRectangle(sbx, sby, sbw, sbh);
+        changeColor(new Color(112, 95, 68));
+        drawRectangle(sbx, sby, sbw, sbh, 2);
+        drawEmbossedText(sbx + 8, sby + 14, "SCORE", 14, new Color(220, 205, 165), new Color(68, 56, 38));
+        int currentScore = totalKillScore + (int)Math.floor(runTimeSeconds * GameConfig.SCORE_SURVIVAL_PER_SECOND);
+        changeColor(new Color(255, 220, 80));
+        drawBoldText(sbx + 8, sby + 38, String.valueOf(currentScore), "Georgia", 26);
+        changeColor(new Color(180, 170, 150));
+        drawText(sbx + 8, sby + 58, "Kills: " + killCount, "Arial", 12);
+        drawText(sbx + 108, sby + 58, "Time: " + formatTime(runTimeSeconds), "Arial", 12);
     }
 
     private void renderMenu() {
@@ -542,10 +568,44 @@ public class SurvivalGame extends GameEngine {
 
     private void renderEndScreen(boolean victory) {
         changeColor(victory ? new Color(100, 230, 120) : new Color(230, 100, 100));
-        drawBoldText(380, 300, victory ? "VICTORY" : "DEFEAT", "Arial", 64);
+        drawBoldText(380, 220, victory ? "VICTORY" : "DEFEAT", "Arial", 64);
+
+        int survivalScore = (int)Math.floor(runTimeSeconds * GameConfig.SCORE_SURVIVAL_PER_SECOND);
+        int bossBonus = bossKilled ? GameConfig.SCORE_BOSS_KILL : 0;
+        int fullHpBonus = fullHealthBonusEarned ? GameConfig.SCORE_FULL_HP_BONUS : 0;
+        int finalScore = calculateFinalScore();
+
+        changeColor(new Color(255, 220, 80));
+        drawBoldText(320, 280, "TOTAL SCORE: " + finalScore, "Arial", 32);
+
+        int y = 318;
+        changeColor(new Color(200, 200, 200));
+        drawText(280, y, "Kills: " + killCount + " enemies  —  " + totalKillScore + " pts", "Arial", 16);
+        y += 22;
+        drawText(280, y, "Survival Time: " + formatTime(runTimeSeconds) + "  —  +" + survivalScore + " pts", "Arial", 16);
+        y += 22;
+        if (bossKilled) {
+            changeColor(new Color(255, 180, 80));
+            drawText(280, y, "Boss Kill  —  +" + bossBonus + " pts", "Arial", 16);
+            y += 22;
+        }
+        if (fullHealthBonusEarned) {
+            changeColor(new Color(120, 255, 120));
+            drawText(280, y, "Full HP Completion  —  +" + fullHpBonus + " pts", "Arial", 16);
+            y += 22;
+        }
+        double milestoneMult = 1.0;
+        if (highestLevelReached >= 75) milestoneMult = GameConfig.SCORE_MILESTONE_LV75;
+        else if (highestLevelReached >= 50) milestoneMult = GameConfig.SCORE_MILESTONE_LV50;
+        else if (highestLevelReached >= 25) milestoneMult = GameConfig.SCORE_MILESTONE_LV25;
+        if (milestoneMult > 1.0) {
+            changeColor(new Color(180, 160, 255));
+            drawText(280, y, "Level Milestone x" + String.format("%.1f", milestoneMult) + "  (reached Lv " + highestLevelReached + ")", "Arial", 16);
+            y += 22;
+        }
+
         changeColor(Color.WHITE);
-        drawText(360, 360, "Survival Time: " + formatTime(runTimeSeconds), "Arial", 26);
-        drawText(300, 420, "Press SPACE to restart", "Arial", 28);
+        drawText(300, y + 16, "Press SPACE to restart", "Arial", 28);
     }
 
     private String formatTime(double sec) {
@@ -586,7 +646,6 @@ public class SurvivalGame extends GameEngine {
         int H = height();
         double t = introTimer;
 
-        // Sky gradient
         for (int i = 0; i < H; i++) {
             double ratio = (double)i / H;
             int r = (int)(8 + ratio * 18);
@@ -596,7 +655,6 @@ public class SurvivalGame extends GameEngine {
             drawSolidRectangle(0, i, W, 1);
         }
 
-        // Stars
         int[] starSeeds = new int[] {17, 42, 73, 101, 138, 179, 211, 259, 301, 344, 389, 423, 467, 512, 556, 601, 47, 88, 124, 166, 198, 243, 288, 327, 371, 415, 458, 503, 548, 586};
         for (int i = 0; i < starSeeds.length; i++) {
             int sx = (starSeeds[i] * 37 + 131) % W;
@@ -608,7 +666,6 @@ public class SurvivalGame extends GameEngine {
             drawSolidRectangle(sx, sy, size, size);
         }
 
-        // Moon
         int moonX = W - 130;
         int moonY = 75;
         changeColor(new Color(235, 228, 200, 210));
@@ -616,18 +673,10 @@ public class SurvivalGame extends GameEngine {
         changeColor(new Color(16, 14, 26));
         drawSolidCircle(moonX + 10, moonY - 4, 31);
 
-        // Distant mountains
         changeColor(new Color(18, 14, 24, 220));
         int[] mtnX = new int[] {0, 60, 140, 200, 280, 370, 440, 520, 620, 710, 790, 880, 960};
         int[] mtnH = new int[] {90, 130, 85, 150, 100, 170, 110, 140, 95, 165, 105, 145, 90};
         for (int i = 0; i < mtnX.length - 2; i++) {
-            int[] xs = new int[] {mtnX[i], (mtnX[i] + mtnX[i + 1]) / 2, mtnX[i + 1]};
-            int[] ys = new int[] {H - 80 - (i % 2 == 0 ? 40 : 60), H - 80 - mtnH[i], H - 80 - (i % 2 == 0 ? 50 : 55)};
-            for (int j = 0; j < xs.length; j++) {
-                if (j == 0) {
-                    // simplified: just draw triangles
-                }
-            }
             changeColor(new Color(18, 14, 24, 220));
             int cx = (mtnX[i] + mtnX[i + 1]) / 2;
             int peakY = H - 80 - mtnH[i];
@@ -872,6 +921,11 @@ public class SurvivalGame extends GameEngine {
         playerAuraTrailTimer = 0;
         levelMilestoneNotice = -1;
         levelMilestoneNoticeTimer = 0;
+        killCount = 0;
+        totalKillScore = 0;
+        bossKilled = false;
+        fullHealthBonusEarned = false;
+        highestLevelReached = 0;
         enemies.clear();
         pickups.clear();
         projectiles.clear();
@@ -1499,6 +1553,32 @@ public class SurvivalGame extends GameEngine {
         upgradeSystem.gainXP(amount);
     }
 
+    public void addKillScore(Enemy enemy) {
+        if (enemy.getType() == Enemy.BOSS) return;
+        killCount++;
+        double rarityMult;
+        switch (enemy.getRarity()) {
+            case Enemy.RARITY_RARE:   rarityMult = GameConfig.SCORE_RARITY_RARE; break;
+            case Enemy.RARITY_EPIC:   rarityMult = GameConfig.SCORE_RARITY_EPIC; break;
+            case Enemy.RARITY_LEGENDARY: rarityMult = GameConfig.SCORE_RARITY_LEGENDARY; break;
+            default:                  rarityMult = GameConfig.SCORE_RARITY_NORMAL; break;
+        }
+        totalKillScore += (int)Math.round(enemy.getBaseKillScore() * rarityMult);
+    }
+
+    public int calculateFinalScore() {
+        int survivalScore = (int)Math.floor(runTimeSeconds * GameConfig.SCORE_SURVIVAL_PER_SECOND);
+        int bossBonus = bossKilled ? GameConfig.SCORE_BOSS_KILL : 0;
+        int fullHpBonus = fullHealthBonusEarned ? GameConfig.SCORE_FULL_HP_BONUS : 0;
+        int subtotal = totalKillScore + survivalScore + bossBonus + fullHpBonus;
+        double milestoneMult;
+        if (highestLevelReached >= 75) milestoneMult = GameConfig.SCORE_MILESTONE_LV75;
+        else if (highestLevelReached >= 50) milestoneMult = GameConfig.SCORE_MILESTONE_LV50;
+        else if (highestLevelReached >= 25) milestoneMult = GameConfig.SCORE_MILESTONE_LV25;
+        else milestoneMult = 1.0;
+        return (int)Math.round(subtotal * milestoneMult);
+    }
+
     public void spawnEnemyNear(double x, double y, int type, double radius) {
         double angle = Math.toRadians(rand(360.0));
         double sx = x + Math.cos(angle) * radius;
@@ -1518,6 +1598,10 @@ public class SurvivalGame extends GameEngine {
     }
 
     public void onBossKilled() {
+        bossKilled = true;
+        if (player != null && player.health >= player.maxHealth) {
+            fullHealthBonusEarned = true;
+        }
         gameState = STATE_VICTORY;
     }
 
