@@ -685,34 +685,46 @@ public class SurvivalGame extends GameEngine {
             fillTriangle(px[0], py[0], px[1], py[1], px[2], py[2]);
         }
 
+        // Ground
         changeColor(new Color(22, 16, 28));
         drawSolidRectangle(0, H - 68, W, 68);
 
+        // Castle silhouette (pixel art style)
         int cxBase = W / 2;
         int cyBase = H - 68;
         Color castleColor = new Color(24, 18, 30);
         changeColor(castleColor);
 
+        // Main keep
         drawSolidRectangle(cxBase - 50, cyBase - 140, 100, 140);
+        // Left tower
         drawSolidRectangle(cxBase - 95, cyBase - 110, 40, 110);
+        // Right tower
         drawSolidRectangle(cxBase + 55, cyBase - 110, 40, 110);
+        // Left small tower
         drawSolidRectangle(cxBase - 145, cyBase - 75, 30, 75);
+        // Right small tower
         drawSolidRectangle(cxBase + 115, cyBase - 75, 30, 75);
 
+        // Battlements - main keep
         for (int i = 0; i < 5; i++) {
             drawSolidRectangle(cxBase - 46 + i * 19, cyBase - 152, 12, 14);
         }
+        // Battlements - left tower
         for (int i = 0; i < 3; i++) {
             drawSolidRectangle(cxBase - 93 + i * 14, cyBase - 122, 9, 12);
         }
+        // Battlements - right tower
         for (int i = 0; i < 3; i++) {
             drawSolidRectangle(cxBase + 57 + i * 14, cyBase - 122, 9, 12);
         }
+        // Battlements - small towers
         for (int i = 0; i < 2; i++) {
             drawSolidRectangle(cxBase - 143 + i * 16, cyBase - 87, 8, 12);
             drawSolidRectangle(cxBase + 117 + i * 16, cyBase - 87, 8, 12);
         }
 
+        // Castle gate
         changeColor(new Color(34, 24, 20));
         drawSolidRectangle(cxBase - 16, cyBase - 52, 32, 52);
         int gateArchY = cyBase - 52;
@@ -720,14 +732,17 @@ public class SurvivalGame extends GameEngine {
         changeColor(new Color(56, 42, 20));
         drawSolidRectangle(cxBase - 16, gateArchY, 32, 2);
 
+        // Windows (lit)
         Color windowGlow = new Color(255, 200, 100, 180);
         changeColor(windowGlow);
         drawSolidRectangle(cxBase - 28, cyBase - 90, 10, 14);
         drawSolidRectangle(cxBase + 18, cyBase - 90, 10, 14);
         drawSolidRectangle(cxBase - 6, cyBase - 110, 10, 14);
+        // Tower windows
         drawSolidRectangle(cxBase - 82, cyBase - 70, 8, 12);
         drawSolidRectangle(cxBase + 74, cyBase - 70, 8, 12);
 
+        // Torches by gate - left
         int torchLX = cxBase - 24;
         int torchLY = cyBase - 58;
         changeColor(new Color(46, 36, 22));
@@ -739,6 +754,7 @@ public class SurvivalGame extends GameEngine {
         changeColor(new Color(255, 210, 80, 140));
         drawSolidCircle(torchLX, torchLY - 5, 3);
 
+        // Torches by gate - right
         int torchRX = cxBase + 24;
         int torchRY = cyBase - 58;
         changeColor(new Color(46, 36, 22));
@@ -750,22 +766,28 @@ public class SurvivalGame extends GameEngine {
         changeColor(new Color(255, 210, 80, 140));
         drawSolidCircle(torchRX, torchRY - 5, 3);
 
+        // Sword in stone (pixel art) - bottom left area
         int swordX = 110;
         int swordY = cyBase;
         changeColor(new Color(80, 78, 90));
         drawSolidRectangle(swordX - 3, swordY + 10, 6, 24);
+        // Blade
         changeColor(new Color(180, 185, 200));
         drawSolidRectangle(swordX - 2, swordY - 34, 4, 48);
         changeColor(new Color(210, 215, 230));
         drawSolidRectangle(swordX - 1, swordY - 34, 2, 46);
+        // Crossguard
         changeColor(new Color(160, 140, 90));
         drawSolidRectangle(swordX - 12, swordY + 8, 24, 5);
+        // Pommel
         changeColor(new Color(180, 155, 90));
         drawSolidCircle(swordX, swordY + 7, 5);
+        // Glow on blade
         double bladeGlow = 0.55 + 0.45 * Math.sin(t * 2.4);
         changeColor(new Color(160, 200, 255, (int)(80 * bladeGlow)));
         drawSolidRectangle(swordX - 1, swordY - 30, 2, 38);
 
+        // Embers rising from torches
         for (int i = 0; i < 6; i++) {
             double ex = torchLX - 6 + (i * 17 + 37) % 16;
             double ey = torchLY - 8 - (t * 30 + i * 53) % 60;
@@ -776,10 +798,12 @@ public class SurvivalGame extends GameEngine {
             }
         }
 
+        // Narrative text phases
         int textCenterX = W / 2;
         int textY = H / 2 + 30;
 
         if (introPhase == 0) {
+            // Phase 0: opening title
             double fadeIn = Math.min(1.0, introTimer / 1.2);
             int alpha = (int)(fadeIn * 240);
             drawCenteredEmbossedText(0, textY - 20, W, "CHRONICLES OF DUSK", 44, FONT_TITLE,
@@ -787,6 +811,7 @@ public class SurvivalGame extends GameEngine {
             changeColor(new Color(188, 165, 112, alpha));
             drawCenteredText(0, textY + 28, W, "A tale of darkness, courage, and redemption", FONT_BODY, 15);
         } else if (introPhase == 1) {
+            // Phase 1: scrolling narrative
             double scrollY = introScrollOffset;
             String[] lines = new String[] {
                 "Long ago, in the war-torn lands of Dusk...",
@@ -824,6 +849,7 @@ public class SurvivalGame extends GameEngine {
                 }
             }
         } else if (introPhase == 2) {
+            // Phase 2: hero call
             double fadeIn = Math.min(1.0, (introTimer - 7.0) / 1.5);
             int alpha = (int)(fadeIn * 220);
             String[] lines2 = new String[] {
@@ -850,10 +876,12 @@ public class SurvivalGame extends GameEngine {
                 }
             }
         } else if (introPhase == 3) {
+            // Phase 3: final call + transition
             double phaseTime = introTimer - 14.5;
             double fadeIn = Math.min(1.0, phaseTime / 1.5);
             int alpha = (int)(fadeIn * 240);
 
+            // Sparkle/flash effect
             double flash = Math.sin(phaseTime * 4.0) * 0.5 + 0.5;
             if (flash > 0.7) {
                 changeColor(new Color(255, 240, 200, (int)(60 * (flash - 0.7) / 0.3)));
@@ -865,6 +893,7 @@ public class SurvivalGame extends GameEngine {
             changeColor(new Color(210, 190, 150, alpha));
             drawCenteredText(0, textY + 4, W, "Choose your champion and reclaim the fallen kingdom", FONT_BODY, 16);
 
+            // Fade to white near end
             if (phaseTime > 5.5) {
                 double endFade = (phaseTime - 5.5) / 2.0;
                 changeColor(new Color(255, 252, 245, (int)(endFade * 240)));
@@ -872,6 +901,7 @@ public class SurvivalGame extends GameEngine {
             }
         }
 
+        // Skip hint
         if (introTimer > 1.0) {
             double hintAlpha = 110 + Math.sin(t * 2.5) * 30;
             changeColor(new Color(160, 150, 130, (int)hintAlpha));
@@ -975,7 +1005,7 @@ public class SurvivalGame extends GameEngine {
                     screenShakeEnabled = !screenShakeEnabled;
                 }
             } else {
-                if (code == KeyEvent.VK_1 || code == KeyEvent.VK_ENTER) startIntro();
+                if (code == KeyEvent.VK_1 || code == KeyEvent.VK_ENTER) gameState = STATE_INTRO;
                 if (code == KeyEvent.VK_S) menuSettingsOpen = true;
             }
         } else if (gameState == STATE_CHAR_SELECT) {
@@ -1306,7 +1336,7 @@ public class SurvivalGame extends GameEngine {
             }
             return;
         }
-        if (menuHoverButton == 0) startIntro();
+        if (menuHoverButton == 0) gameState = STATE_INTRO;
         else if (menuHoverButton == 1) menuSettingsOpen = true;
         else if (menuHoverButton == 2) System.exit(0);
     }
