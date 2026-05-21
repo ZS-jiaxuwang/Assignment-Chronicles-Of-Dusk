@@ -235,11 +235,11 @@ public class SurvivalGame extends GameEngine {
         for (Pickup p : pickups) {
             if (camera.isVisible(p.x, p.y, 30)) p.render(this);
         }
-        for (Projectile p : projectiles) {
-            if (camera.isVisible(p.x, p.y, 30)) p.render(this);
-        }
         for (Enemy e : enemies) {
             if (camera.isVisible(e.x, e.y, 60)) e.render(this);
+        }
+        for (Projectile p : projectiles) {
+            if (camera.isVisible(p.x, p.y, 30)) p.render(this);
         }
         if (player != null) player.render(this);
         vfx.render(this);
@@ -1619,6 +1619,10 @@ public class SurvivalGame extends GameEngine {
             }
         }
         return best;
+    }
+
+    public double getRunTimeSeconds() {
+        return runTimeSeconds;
     }
 
     public double getPlayerPickupRange() {

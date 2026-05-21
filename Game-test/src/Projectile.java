@@ -42,6 +42,15 @@ public class Projectile extends Entity {
     @Override
     public void render(GameEngine g) {
         if (!alive) return;
+
+        if (!friendly) {
+            g.changeColor(baseColor);
+            g.drawSolidCircle(x, y, radius);
+            g.changeColor(new Color(255, 255, 255, 140));
+            g.drawSolidCircle(x, y, radius * 0.55);
+            return;
+        }
+
         double px = Math.max(2.0, radius * 0.5);
         double deg = Math.toDegrees(angleRad);
 
