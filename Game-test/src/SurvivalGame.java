@@ -45,8 +45,11 @@ public class SurvivalGame extends GameEngine {
     public CollisionSystem collisionSystem;
     public WeaponManager weaponManager;
     public UpgradeSystem upgradeSystem;
+    public AudioManager audio;
 
     private CharacterDef[] characters;
+    private int prevGameState = -1;
+    private boolean bossWasActive = false;
     private double runTimeSeconds;
     private double bossIntroTimer;
     private double playerAuraTrailTimer;
@@ -75,10 +78,28 @@ public class SurvivalGame extends GameEngine {
         collisionSystem = new CollisionSystem(this);
         weaponManager = new WeaponManager(this);
         upgradeSystem = new UpgradeSystem(this);
+        audio = new AudioManager(this);
     }
 
     @Override
     public void update(double dt) {
+        // ── Audio: state transitions ──
+        if (gameState != prevGameState) {
+            handleAudioStateChange(prevGameState, gameState);
+            prevGameState = gameState;
+        }
+        // ── Audio: boss detection during combat ──
+        if (gameState == STATE_PLAYING) {
+            boolean bossNow = findBoss() != null;
+            if (bossNow && !bossWasActive) {
+                audio.playBossIntro();
+                audio.playBossBgm();
+            } else if (!bossNow && bossWasActive) {
+                audio.playBattleBgm();
+            }
+            bossWasActive = bossNow;
+        }
+
         if (levelMilestoneNoticeTimer > 0) {
             levelMilestoneNoticeTimer -= dt;
             if (levelMilestoneNoticeTimer <= 0) {
@@ -115,6 +136,23 @@ public class SurvivalGame extends GameEngine {
             if (gameState == STATE_CHAR_SELECT) {
                 updateCharCardAnimation(dt);
             }
+        }
+    }
+
+    private void handleAudioStateChange(int prevState, int newState) {
+        if (newState == STATE_MENU || newState == STATE_CHAR_SELECT) {
+            audio.playMenuBgm();
+        } else if (newState == STATE_PLAYING) {
+            if (prevState != STATE_BOSS_INTRO) {
+                audio.playBattleBgm();
+            }
+        } else if (newState == STATE_BOSS_INTRO) {
+            audio.playBossIntro();
+            audio.playBossBgm();
+        } else if (newState == STATE_VICTORY) {
+            audio.playVictory();
+        } else if (newState == STATE_DEFEAT) {
+            audio.playDefeat();
         }
     }
 
@@ -549,6 +587,7 @@ public class SurvivalGame extends GameEngine {
         playerAuraTrailTimer = 0;
         levelMilestoneNotice = -1;
         levelMilestoneNoticeTimer = 0;
+        bossWasActive = false;
         enemies.clear();
         pickups.clear();
         projectiles.clear();
