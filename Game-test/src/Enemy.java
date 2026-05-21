@@ -28,7 +28,12 @@ public class Enemy extends Entity {
         if (!alive) return;
         int anim;
         Player p = game.player;
-        boolean nearPlayer = p != null && p.alive && distSqTo(p) < (radius + p.radius + 20) * (radius + p.radius + 20);
+        boolean nearPlayer;
+        if (isRangedAttacker()) {
+            nearPlayer = p != null && p.alive && distSqTo(p) < (rangedStandoffFar() + p.radius) * (rangedStandoffFar() + p.radius);
+        } else {
+            nearPlayer = p != null && p.alive && distSqTo(p) < (radius + p.radius + 20) * (radius + p.radius + 20);
+        }
         if (nearPlayer) {
             anim = SpriteManager.ANIM_ATTACK;
         } else if (Math.abs(vx) > 0.5 || Math.abs(vy) > 0.5) {
@@ -64,9 +69,10 @@ public class Enemy extends Entity {
     private double age;
     private double bossProjectileTimer;
     private double bossSummonTimer;
+    private double rangedAttackTimer;
 
     public Enemy(SurvivalGame game, int type, double x, double y) {
-        super(x, y, radiusByType(type), hpByType(type), colorByType(type));
+        super(x, y, radiusByType(type), scaledHp(type, game.getRunTimeSeconds()), colorByType(type));
         this.game = game;
         this.type = type;
         this.baseSpeed = speedByType(type);
@@ -101,6 +107,66 @@ public class Enemy extends Entity {
             double wy = nx * s + ny * c;
             nx = wx;
             ny = wy;
+        }
+
+        if (isRangedAttacker()) {
+            double standoffNear = rangedStandoffNear();
+            double standoffFar = rangedStandoffFar();
+            if (len < standoffNear) {
+                nx = -nx;
+                ny = -ny;
+                speed = baseSpeed * 0.85;
+            } else if (len > standoffFar) {
+                speed = baseSpeed;
+            } else {
+                double strafeDir = Math.sin(age * 1.8) > 0 ? 1 : -1;
+                double snx = -ny * strafeDir;
+                double sny = nx * strafeDir;
+                nx = snx * 0.5 + nx * 0.1;
+                ny = sny * 0.5 + ny * 0.1;
+                double nLen = Math.sqrt(nx * nx + ny * ny);
+                nx /= nLen;
+                ny /= nLen;
+                speed = baseSpeed * 0.45;
+                rangedAttackTimer += dt;
+                double interval = rangedFireInterval();
+                if (rangedAttackTimer >= interval) {
+                    rangedAttackTimer = 0.0;
+                    fireAtPlayer(p, rangedProjSpeed(), rangedProjDamage(), rangedProjLifetime(), rangedProjRadius(), rangedProjColor());
+                }
+            }
+            vx = nx * speed;
+            vy = ny * speed;
+            return;
+        }
+
+        if (type == BAT) {
+            double sepX = 0, sepY = 0;
+            int sepCount = 0;
+            for (int i = 0; i < game.enemies.size(); i++) {
+                Enemy other = game.enemies.get(i);
+                if (other == this || !other.alive || other.type != BAT) continue;
+                double sx = x - other.x;
+                double sy = y - other.y;
+                double sd = sx * sx + sy * sy;
+                if (sd < 2500 && sd > 0.01) {
+                    double sLen = Math.sqrt(sd);
+                    sepX += sx / sLen;
+                    sepY += sy / sLen;
+                    sepCount++;
+                }
+            }
+            if (sepCount > 0) {
+                sepX /= sepCount;
+                sepY /= sepCount;
+                nx = nx * 0.55 + sepX * 0.45;
+                ny = ny * 0.55 + sepY * 0.45;
+                double nLen = Math.sqrt(nx * nx + ny * ny);
+                if (nLen > 0.001) {
+                    nx /= nLen;
+                    ny /= nLen;
+                }
+            }
         }
 
         if (type == BOSS) {
@@ -190,6 +256,94 @@ public class Enemy extends Entity {
         }
     }
 
+    private boolean isRangedAttacker() {
+        return type == GHOST || type == FLYING_EYE || type == MUSHROOM;
+    }
+
+    private double rangedStandoffNear() {
+        switch (type) {
+            case GHOST: return 140;
+            case FLYING_EYE: return 180;
+            case MUSHROOM: return 100;
+            default: return 0;
+        }
+    }
+
+    private double rangedStandoffFar() {
+        switch (type) {
+            case GHOST: return 260;
+            case FLYING_EYE: return 320;
+            case MUSHROOM: return 200;
+            default: return 0;
+        }
+    }
+
+    private double rangedFireInterval() {
+        switch (type) {
+            case GHOST: return 2.5;
+            case FLYING_EYE: return 3.0;
+            case MUSHROOM: return 3.5;
+            default: return 99;
+        }
+    }
+
+    private double rangedProjSpeed() {
+        switch (type) {
+            case GHOST: return 150;
+            case FLYING_EYE: return 200;
+            case MUSHROOM: return 110;
+            default: return 0;
+        }
+    }
+
+    private double rangedProjDamage() {
+        switch (type) {
+            case GHOST: return 10;
+            case FLYING_EYE: return 12;
+            case MUSHROOM: return 15;
+            default: return 0;
+        }
+    }
+
+    private double rangedProjLifetime() {
+        switch (type) {
+            case GHOST: return 3.0;
+            case FLYING_EYE: return 2.5;
+            case MUSHROOM: return 3.5;
+            default: return 0;
+        }
+    }
+
+    private double rangedProjRadius() {
+        switch (type) {
+            case GHOST: return 6;
+            case FLYING_EYE: return 5;
+            case MUSHROOM: return 7;
+            default: return 0;
+        }
+    }
+
+    private Color rangedProjColor() {
+        switch (type) {
+            case GHOST: return new Color(180, 210, 255);
+            case FLYING_EYE: return new Color(210, 100, 240);
+            case MUSHROOM: return new Color(180, 140, 70);
+            default: return Color.WHITE;
+        }
+    }
+
+    private void fireAtPlayer(Player p, double projSpeed, double damage, double lifetime, double radius, Color color) {
+        double dx = p.x - x;
+        double dy = p.y - y;
+        double dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 0.001) dist = 0.001;
+        double angle = Math.atan2(dy, dx);
+        double spawnX = x + Math.cos(angle) * (this.radius + radius + 2);
+        double spawnY = y + Math.sin(angle) * (this.radius + radius + 2);
+        Projectile proj = new Projectile(game, spawnX, spawnY, radius, projSpeed, angle, damage, lifetime, 0, false, color);
+        game.addProjectile(proj);
+    }
+
     private static double radiusByType(int t) {
         switch (t) {
             case BAT: return 10;
@@ -207,17 +361,21 @@ public class Enemy extends Entity {
 
     private static double hpByType(int t) {
         switch (t) {
-            case BAT: return 8;
-            case SKELETON: return 50;
-            case GIANT: return 200;
-            case GHOST: return 12;
-            case BOSS: return 550;
-            case ORC: return 80;
-            case GOBLIN: return 40;
-            case MUSHROOM: return 120;
-            case FLYING_EYE: return 30;
-            default: return 20;
+            case BAT: return 20;
+            case SKELETON: return 280;
+            case GIANT: return 1400;
+            case GHOST: return 35;
+            case BOSS: return 4500;
+            case ORC: return 500;
+            case GOBLIN: return 120;
+            case MUSHROOM: return 750;
+            case FLYING_EYE: return 90;
+            default: return 60;
         }
+    }
+
+    private static double scaledHp(int type, double gameTime) {
+        return hpByType(type) * (1.0 + gameTime * 0.005);
     }
 
     private static double speedByType(int t) {
