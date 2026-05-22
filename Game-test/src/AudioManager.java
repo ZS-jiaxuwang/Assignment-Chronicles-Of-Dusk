@@ -1,7 +1,13 @@
 import java.io.File;
+import javax.sound.sampled.*;
 
 public class AudioManager {
-    private static final String[] AUDIO_DIRS = {"Game-test/audio", "audio"};
+    private static final String[] AUDIO_DIRS = {
+        "Game-test/audio",
+        "audio",
+        "Assignment-Chronicles-Of-Dusk/Game-test/audio",
+        "Assignment-Chronicles-Of-Dusk/audio"
+    };
 
     private final GameEngine engine;
     private GameEngine.AudioClip bgmMenu;
@@ -13,6 +19,7 @@ public class AudioManager {
 
     private String currentBgm = null;
     private float masterVolume = 0.0f;
+    private Clip currentSfxClip;
 
     public AudioManager(GameEngine engine) {
         this.engine = engine;
@@ -41,8 +48,34 @@ public class AudioManager {
         sfxDefeat = engine.loadAudio(resolvePath("sfx_defeat.wav"));
     }
 
+    private void stopSfx() {
+        if (currentSfxClip != null) {
+            if (currentSfxClip.isRunning()) {
+                currentSfxClip.stop();
+            }
+            currentSfxClip.close();
+            currentSfxClip = null;
+        }
+    }
+
+    private void playOneShot(GameEngine.AudioClip audioClip) {
+        stopSfx();
+        if (audioClip == null) return;
+        try {
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioClip.getAudioFormat(), audioClip.getData(), 0, (int)audioClip.getBufferSize());
+            FloatControl control = (FloatControl)clip.getControl(FloatControl.Type.MASTER_GAIN);
+            control.setValue(masterVolume);
+            clip.start();
+            currentSfxClip = clip;
+        } catch(Exception e) {
+            System.out.println("Error playing SFX\n");
+        }
+    }
+
     public void playMenuBgm() {
         if ("menu".equals(currentBgm)) return;
+        stopSfx();
         stopCurrentBgm();
         if (bgmMenu != null) {
             engine.startAudioLoop(bgmMenu, masterVolume);
@@ -52,6 +85,7 @@ public class AudioManager {
 
     public void playBattleBgm() {
         if ("battle".equals(currentBgm)) return;
+        stopSfx();
         stopCurrentBgm();
         if (bgmBattle != null) {
             engine.startAudioLoop(bgmBattle, masterVolume);
@@ -61,6 +95,7 @@ public class AudioManager {
 
     public void playBossBgm() {
         if ("boss".equals(currentBgm)) return;
+        stopSfx();
         stopCurrentBgm();
         if (bgmBoss != null) {
             engine.startAudioLoop(bgmBoss, masterVolume);
@@ -83,27 +118,22 @@ public class AudioManager {
     }
 
     public void playBossIntro() {
-        if (sfxBossIntro != null) {
-            engine.playAudio(sfxBossIntro, masterVolume);
-        }
+        playOneShot(sfxBossIntro);
     }
 
     public void playVictory() {
         stopCurrentBgm();
-        if (sfxVictory != null) {
-            engine.playAudio(sfxVictory, masterVolume);
-        }
+        playOneShot(sfxVictory);
     }
 
     public void playDefeat() {
         stopCurrentBgm();
-        if (sfxDefeat != null) {
-            engine.playAudio(sfxDefeat, masterVolume);
-        }
+        playOneShot(sfxDefeat);
     }
 
     public void stopAll() {
         stopCurrentBgm();
+        stopSfx();
     }
 
     public void setVolume(float volume) {
