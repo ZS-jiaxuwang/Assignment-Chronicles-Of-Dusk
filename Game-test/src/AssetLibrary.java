@@ -28,7 +28,6 @@ public final class AssetLibrary {
     public static final String ORC_DEATH = "enemy_orc_death.png";
     public static final String ORC_ATTACK = "enemy_orc_attack.png";
 
-    public static final String UI_CHAR_PANEL = "ui_char_panel.png";
     public static final String OBSTACLE_BUSH = "obstacle_bush.png";
 
     private static final String[] TREE_SPRITES = {
