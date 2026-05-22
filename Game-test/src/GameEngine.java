@@ -750,9 +750,6 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
                 // Load data
                 clip.open(audioClip.getAudioFormat(), audioClip.getData(), 0, (int)audioClip.getBufferSize());
 
-                // Set Clip to Loop
-                clip.loop(Clip.LOOP_CONTINUOUSLY);
-
                 // Set Loop Clip
                 audioClip.setLoopClip(clip);
             } catch(Exception exception) {
@@ -764,8 +761,8 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
         // Set Frame Position to 0
         clip.setFramePosition(0);
 
-        // Start Audio Clip playing
-        clip.start();
+        // Ensure loop is set before starting
+        clip.loop(Clip.LOOP_CONTINUOUSLY);
     }
 
     // Starts playing an AudioClip on loop with a volume in decibels
@@ -791,15 +788,6 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
                 // Load data
                 clip.open(audioClip.getAudioFormat(), audioClip.getData(), 0, (int)audioClip.getBufferSize());
 
-                // Create Controls
-                FloatControl control = (FloatControl)clip.getControl(FloatControl.Type.MASTER_GAIN);
-
-                // Set Volume
-                control.setValue(volume);
-
-                // Set Clip to Loop
-                clip.loop(Clip.LOOP_CONTINUOUSLY);
-
                 // Set Loop Clip
                 audioClip.setLoopClip(clip);
             } catch(Exception exception) {
@@ -808,11 +796,17 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
             }
         }
 
+        // Always update volume
+        try {
+            FloatControl control = (FloatControl)clip.getControl(FloatControl.Type.MASTER_GAIN);
+            control.setValue(volume);
+        } catch(Exception ignored) { }
+
         // Set Frame Position to 0
         clip.setFramePosition(0);
 
-        // Start Audio Clip playing
-        clip.start();
+        // Ensure loop is set before starting
+        clip.loop(Clip.LOOP_CONTINUOUSLY);
     }
 
     // Stops an AudioClip playing

@@ -5,7 +5,9 @@ public final class AssetLibrary {
 
     private static final String[] SPRITE_DIR_CANDIDATES = {
         "assets/sprites",
-        "Game-test/assets/sprites"
+        "Game-test/assets/sprites",
+        "Assignment-Chronicles-Of-Dusk/assets/sprites",
+        "Assignment-Chronicles-Of-Dusk/Game-test/assets/sprites"
     };
 
     public static final String CHAR_WARRIOR = "character_warrior.png";
