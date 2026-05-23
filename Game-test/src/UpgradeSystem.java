@@ -58,7 +58,7 @@ public class UpgradeSystem {
 
         if (roll < 30) {
             ArrayList<Integer> newWeaponPool = new ArrayList<Integer>();
-            for (int wid = WeaponDef.WHIP; wid <= WeaponDef.KNIFE; wid++) {
+            for (int wid = WeaponDef.SWORD; wid <= WeaponDef.KNIFE; wid++) {
                 if (!game.weaponManager.hasWeapon(wid) && game.weaponManager.list().size() < 6) {
                     newWeaponPool.add(wid);
                 }

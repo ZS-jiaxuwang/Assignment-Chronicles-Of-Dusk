@@ -45,9 +45,20 @@ public class Enemy extends Entity {
         if (type == ORC) {
             boolean flip = p != null && x > p.x;
             SpriteManager.drawOrc(anim, age, x, y, radius, c, flip);
+        } else if (type == SLIME) {
+            SpriteManager.drawSlime(anim, age, x, y, radius, c);
+        } else if (type == BAT) {
+            SpriteManager.drawBat(anim, age, x, y, radius, c);
+        } else if (type == GIANT) {
+            SpriteManager.drawGiant(anim, age, x, y, radius, c);
+        } else if (type == GHOST) {
+            SpriteManager.drawGhost(anim, age, x, y, radius, c);
+        } else if (type == BOSS) {
+            SpriteManager.drawBoss(anim, age, x, y, radius, c);
         } else {
             boolean flip = p != null && x > p.x;
-            SpriteManager.drawMonsterSingle(getAssetKey(), anim, age, x, y, radius, c, flip);
+            double scale = visualScale();
+            SpriteManager.drawMonsterSingle(getAssetKey(), anim, age, x, y, radius, c, flip, scale);
         }
     }
 
@@ -72,11 +83,12 @@ public class Enemy extends Entity {
     private double rangedAttackTimer;
 
     public Enemy(SurvivalGame game, int type, double x, double y) {
-        super(x, y, radiusByType(type), scaledHp(type, game.getRunTimeSeconds()), colorByType(type));
+        super(x, y, radiusByType(type), hpByType(type) * (1.0 + game.getRunTimeSeconds() * 0.012), colorByType(type));
         this.game = game;
         this.type = type;
-        this.baseSpeed = speedByType(type);
-        this.contactDamage = contactDamageByType(type);
+        double t = game.getRunTimeSeconds();
+        this.baseSpeed = speedByType(type) * (1.0 + t * 0.004);
+        this.contactDamage = contactDamageByType(type) * (1.0 + t * 0.005);
         this.xpValue = xpByType(type);
     }
 
@@ -216,7 +228,7 @@ public class Enemy extends Entity {
     }
 
     private int randomWeaponId() {
-        int[] pool = {WeaponDef.WHIP, WeaponDef.MAGIC_WAND, WeaponDef.AXE, WeaponDef.GARLIC, WeaponDef.KNIFE};
+        int[] pool = {WeaponDef.SWORD, WeaponDef.MAGIC_WAND, WeaponDef.AXE, WeaponDef.GARLIC, WeaponDef.KNIFE};
         return pool[game.rand(pool.length)];
     }
 
@@ -340,23 +352,27 @@ public class Enemy extends Entity {
         double angle = Math.atan2(dy, dx);
         double spawnX = x + Math.cos(angle) * (this.radius + radius + 2);
         double spawnY = y + Math.sin(angle) * (this.radius + radius + 2);
-        Projectile proj = new Projectile(game, spawnX, spawnY, radius, projSpeed, angle, damage, lifetime, 0, false, color);
+        Projectile proj = new Projectile(game, spawnX, spawnY, radius, projSpeed, angle, damage, lifetime, 0, false, color, Projectile.TYPE_ARROW);
         game.addProjectile(proj);
     }
 
     private static double radiusByType(int t) {
         switch (t) {
-            case BAT: return 10;
-            case SKELETON: return 16;
-            case GIANT: return 24;
-            case GHOST: return 10;
-            case BOSS: return 40;
-            case ORC: return 18;
-            case GOBLIN: return 14;
-            case MUSHROOM: return 20;
-            case FLYING_EYE: return 12;
-            default: return 14;
+            case BAT: return 18;
+            case SKELETON: return 28;
+            case GIANT: return 44;
+            case GHOST: return 20;
+            case BOSS: return 52;
+            case ORC: return 30;
+            case GOBLIN: return 24;
+            case MUSHROOM: return 36;
+            case FLYING_EYE: return 22;
+            default: return 24;
         }
+    }
+
+    private double visualScale() {
+        return 1.5 + radius * 0.025;
     }
 
     private static double hpByType(int t) {
@@ -365,17 +381,13 @@ public class Enemy extends Entity {
             case SKELETON: return 280;
             case GIANT: return 1400;
             case GHOST: return 35;
-            case BOSS: return 4500;
+            case BOSS: return 12000;
             case ORC: return 500;
             case GOBLIN: return 120;
             case MUSHROOM: return 750;
             case FLYING_EYE: return 90;
             default: return 60;
         }
-    }
-
-    private static double scaledHp(int type, double gameTime) {
-        return hpByType(type) * (1.0 + gameTime * 0.005);
     }
 
     private static double speedByType(int t) {

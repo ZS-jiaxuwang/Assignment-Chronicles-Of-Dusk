@@ -4,21 +4,21 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 public class SurvivalGame extends GameEngine {
-    private static final String FONT_TITLE = "Serif";
-    private static final String FONT_BODY = "Dialog";
-    private static final String FONT_NUM = "Georgia";
-    public static final int STATE_MENU = 0;
-    public static final int STATE_CHAR_SELECT = 1;
-    public static final int STATE_PLAYING = 2;
-    public static final int STATE_UPGRADE_PAUSE = 3;
-    public static final int STATE_BOSS_INTRO = 4;
-    public static final int STATE_VICTORY = 5;
-    public static final int STATE_DEFEAT = 6;
-    public static final int STATE_WEAPON_SWAP = 7;
-    public static final int STATE_TIER_UP = 8;
-    public static final int STATE_INTRO = 9;
-    public static final int STATE_PAUSED = 10;
-    public static final int STATE_HELP = 11;
+    private static final String FONT_TITLE = "Serif";  //标题衬线字体
+    private static final String FONT_BODY = "Dialog";  //正文无衬线字体
+    private static final String FONT_NUM = "Georgia";  //数字字体
+    public static final int STATE_MENU = 0;            //menu界面
+    public static final int STATE_CHAR_SELECT = 1;     //选择角色界面
+    public static final int STATE_PLAYING = 2;         //战斗界面
+    public static final int STATE_UPGRADE_PAUSE = 3;   //升级暂停--画面冻结弹出三张卡片
+    public static final int STATE_BOSS_INTRO = 4;      //Boss登场警告
+    public static final int STATE_VICTORY = 5;         //胜利结算
+    public static final int STATE_DEFEAT = 6;          //失败
+    public static final int STATE_WEAPON_SWAP = 7;     //武器槽满时替换选择界面
+    public static final int STATE_TIER_UP = 8;         //角色晋升
+    public static final int STATE_INTRO = 9;           //开场动画
+    public static final int STATE_PAUSED = 10;         //手动暂停P
+    public static final int STATE_HELP = 11;           //帮助界面
 
     int gameState = STATE_MENU;
     double introTimer;
@@ -33,18 +33,18 @@ public class SurvivalGame extends GameEngine {
     int mouseX;
     int mouseY;
     int menuHoverButton = -1;
-    int charHoverIndex = -1;
+    int charHoverIndex = -1;     //角色选择悬停
     final double[] charCardLift = new double[] {0, 0, 0};
     boolean menuSettingsOpen;
     boolean screenShakeEnabled = true;
     int combatPaceLevel = 1; // 0: relaxed, 1: normal, 2: intense
 
     public Player player;
-    public final ArrayList<Enemy> enemies = new ArrayList<Enemy>();
+    public final ArrayList<Enemy> enemies = new ArrayList<Enemy>();   //Max 240
     public final ArrayList<Projectile> projectiles = new ArrayList<Projectile>();
     public final ArrayList<Pickup> pickups = new ArrayList<Pickup>();
 
-    public VfxManager vfx;
+    public VfxManager vfx;  //粒子效果管理
     public Camera camera;
     public GameMap gameMap;
     public EnemySpawner spawner;
@@ -62,6 +62,9 @@ public class SurvivalGame extends GameEngine {
     private int levelMilestoneNotice = -1;
     private double levelMilestoneNoticeTimer;
 
+
+
+    //计分系统
     private int killCount;
     private int totalKillScore;
     private boolean bossKilled;
@@ -279,7 +282,45 @@ public class SurvivalGame extends GameEngine {
         for (Projectile p : projectiles) {
             if (camera.isVisible(p.x, p.y, 30)) p.render(this);
         }
-        if (player != null) player.render(this);
+        weaponManager.renderCircles(this);
+        if (player != null) {
+            player.render(this);
+            // Shield: golden barrier + particles
+            if (weaponManager.shieldTimer > 0) {
+                double st = weaponManager.shieldTimer;
+                double pulse = 1.0 + Math.sin(st * 6.0) * 0.08;
+                // Outer golden bubble
+                double bubbleR = player.radius * 1.5 * pulse;
+                changeColor(new Color(255, 200, 40, 60));
+                drawSolidCircle(player.x, player.y, bubbleR);
+                changeColor(new Color(255, 230, 100, 120));
+                drawCircle(player.x, player.y, bubbleR, 3.0);
+                // Hexagonal barrier segments
+                for (int i = 0; i < 6; i++) {
+                    double a1 = st * 1.5 + i * Math.PI * 2 / 6;
+                    double a2 = a1 + Math.PI * 2 / 6;
+                    double x1 = player.x + Math.cos(a1) * bubbleR;
+                    double y1 = player.y + Math.sin(a1) * bubbleR;
+                    double x2 = player.x + Math.cos(a2) * bubbleR;
+                    double y2 = player.y + Math.sin(a2) * bubbleR;
+                    changeColor(new Color(255, 240, 150, 150));
+                    drawLine(x1, y1, x2, y2, 2.5);
+                }
+                // Spinning particles
+                for (int i = 0; i < 16; i++) {
+                    double sa = st * 5.0 + i * Math.PI * 2 / 16;
+                    double sr = bubbleR + Math.sin(st * 10 + i) * 10;
+                    double sx = player.x + Math.cos(sa) * sr;
+                    double sy = player.y + Math.sin(sa) * sr;
+                    changeColor(new Color(255, 240, 80, 200));
+                    double ps = 3 + Math.abs(Math.sin(st * 8 + i * 1.3)) * 3;
+                    drawSolidRectangle(sx - ps * 0.5, sy - ps * 0.5, ps, ps);
+                }
+                // Bright inner core ring
+                changeColor(new Color(255, 250, 180, 100));
+                drawCircle(player.x, player.y, player.radius * 0.9, 2.0);
+            }
+        }
         vfx.render(this);
         vfx.endCamera(this);
 
@@ -402,7 +443,7 @@ public class SurvivalGame extends GameEngine {
         double pulse = 1.0 + Math.sin(uiTime() * 2.2) * 0.02;
         int titleY = 138 + (int)(Math.sin(uiTime() * 2.0) * 3);
 
-        drawEmbossedText(256, titleY, "CHRONICLES OF DUSK", 46, new Color(235, 220, 170), new Color(66, 50, 33));
+        drawEmbossedText(225, titleY, "CHRONICLES OF DUSK", 46, new Color(235, 220, 170), new Color(66, 50, 33));
         changeColor(new Color(188, 165, 112));
         drawText(337, 178, "A PIXEL MEDIEVAL SURVIVAL CHRONICLE", "Arial", 15);
 
@@ -413,10 +454,7 @@ public class SurvivalGame extends GameEngine {
 
         changeColor(new Color(214, 201, 165));
         drawText(280, 508, "KEYS: [1/ENTER] START   [S] SETTINGS   [H] CONTROLS   [ESC] EXIT", "Arial", 13);
-        if (!menuSettingsOpen) {
-            changeColor(new Color(186, 172, 133, 120));
-            drawSolidRectangle(320, 236, 320 * pulse, 4);
-        }
+
 
 
 
@@ -619,11 +657,17 @@ public class SurvivalGame extends GameEngine {
     private void renderPauseOverlay() {
         changeColor(new Color(0, 0, 0, 150));
         drawSolidRectangle(0, 0, width(), height());
+
+        String title = "PAUSED";
+        String resume = "Press P to resume";
+        String quit = "Press ESC to quit";
+
         changeColor(new Color(230, 210, 150));
-        drawBoldText(300, 310, "PAUSED", "Arial", 48);
+        drawBoldText(width()/2.0 - (double) estimateTextWidth(title, 48, true, "Arial") / 2-19, height()/2.0 - 20, title, "Arial", 48);
+
         changeColor(new Color(200, 190, 160));
-        drawText(260, 360, "Press P to resume", "Arial", 20);
-        drawText(260, 390, "Press ESC to quit", "Arial", 20);
+        drawText(width()/2.0 - (double) estimateTextWidth(resume, 20, false, "Arial") / 2,  height()/2.0+ 28, resume, "Arial", 20);
+        drawText(width()/2.0 - (double) estimateTextWidth(quit, 20, false, "Arial") / 2, height()/2.0 + 52, quit, "Arial", 20);
     }
 
     private void renderHelpScreen() {
@@ -662,45 +706,112 @@ public class SurvivalGame extends GameEngine {
     }
 
     private void renderEndScreen(boolean victory) {
-        changeColor(victory ? new Color(100, 230, 120) : new Color(230, 100, 100));
-        drawBoldText(380, 220, victory ? "VICTORY" : "DEFEAT", "Arial", 64);
+        // Dark overlay
+        changeColor(new Color(0, 0, 0, 180));
+        drawSolidRectangle(0, 0, width(), height());
 
+        int cx = width() / 2;
+        int cy = height() / 2;
+
+        // Title with glow
+        String title = victory ? "VICTORY" : "DEFEAT";
+        Color titleColor = victory ? new Color(100, 240, 120) : new Color(240, 100, 100);
+        Color titleGlow = victory ? new Color(40, 160, 60, 120) : new Color(160, 40, 40, 120);
+        int titleSize = 56;
+        int titleW = estimateTextWidth(title, titleSize, true, "Arial");
+
+        changeColor(titleGlow);
+        drawSolidCircle(cx, cy - 110, 140);
+        changeColor(titleColor);
+        drawBoldText(cx - titleW / 2, cy - 110, title, "Arial", titleSize);
+
+        // Score values
         int survivalScore = (int)Math.floor(runTimeSeconds * GameConfig.SCORE_SURVIVAL_PER_SECOND);
         int bossBonus = bossKilled ? GameConfig.SCORE_BOSS_KILL : 0;
         int fullHpBonus = fullHealthBonusEarned ? GameConfig.SCORE_FULL_HP_BONUS : 0;
         int finalScore = calculateFinalScore();
 
-        changeColor(new Color(255, 220, 80));
-        drawBoldText(320, 280, "TOTAL SCORE: " + finalScore, "Arial", 32);
+        // Score box
+        String scoreLabel = "TOTAL SCORE";
+        String scoreValue = String.valueOf(finalScore);
+        int scoreLabelW = estimateTextWidth(scoreLabel, 18, false, "Arial");
+        int scoreValueW = estimateTextWidth(scoreValue, 40, true, "Arial");
+        int boxW = Math.max(scoreLabelW, scoreValueW) + 60;
+        int boxH = 76;
+        int boxX = cx - boxW / 2;
+        int boxY = cy - 52;
 
-        int y = 318;
-        changeColor(new Color(200, 200, 200));
-        drawText(280, y, "Kills: " + killCount + " enemies  —  " + totalKillScore + " pts", "Arial", 16);
-        y += 22;
-        drawText(280, y, "Survival Time: " + formatTime(runTimeSeconds) + "  —  +" + survivalScore + " pts", "Arial", 16);
-        y += 22;
+        changeColor(new Color(20, 20, 30, 200));
+        drawSolidRectangle(boxX, boxY, boxW, boxH);
+        changeColor(new Color(255, 200, 40, 80));
+        drawRectangle(boxX, boxY, boxW, boxH, 2);
+
+        changeColor(new Color(200, 180, 140));
+        drawText(cx - scoreLabelW / 2, boxY + 22, scoreLabel, "Arial", 18);
+        changeColor(new Color(255, 220, 60));
+        drawBoldText(cx - scoreValueW / 2, boxY + 58, scoreValue, "Arial", 40);
+
+        // Detail lines
+        int y = boxY + boxH + 28;
+        int lineH = 22;
+        int leftCol = cx - 85;
+        int rightCol = cx + 70;
+
+        // Kills
+        changeColor(new Color(210, 200, 180));
+        drawText(leftCol, y, "Enemies Defeated", "Arial", 15);
+        changeColor(new Color(240, 220, 180));
+        String killStr = killCount + "";
+        drawText(rightCol - estimateTextWidth(killStr, 15, false, "Arial"), y, killStr, "Arial", 15);
+        y += lineH;
+
+        // Survival time
+        changeColor(new Color(210, 200, 180));
+        drawText(leftCol, y, "Survival Time", "Arial", 15);
+        changeColor(new Color(240, 220, 180));
+        String timeStr = formatTime(runTimeSeconds);
+        drawText(rightCol - estimateTextWidth(timeStr, 15, false, "Arial"), y, timeStr, "Arial", 15);
+        y += lineH;
+
+        // Boss kill
         if (bossKilled) {
-            changeColor(new Color(255, 180, 80));
-            drawText(280, y, "Boss Kill  —  +" + bossBonus + " pts", "Arial", 16);
-            y += 22;
+            changeColor(new Color(255, 200, 100));
+            drawText(leftCol, y, "Boss Defeated", "Arial", 15);
+            changeColor(new Color(255, 220, 120));
+            String bossStr = "+" + bossBonus;
+            drawText(rightCol - estimateTextWidth(bossStr, 15, false, "Arial"), y, bossStr, "Arial", 15);
+            y += lineH;
         }
+
+        // Full HP bonus
         if (fullHealthBonusEarned) {
-            changeColor(new Color(120, 255, 120));
-            drawText(280, y, "Full HP Completion  —  +" + fullHpBonus + " pts", "Arial", 16);
-            y += 22;
+            changeColor(new Color(140, 240, 140));
+            drawText(leftCol, y, "Perfect HP", "Arial", 15);
+            changeColor(new Color(160, 255, 160));
+            String hpStr = "+" + fullHpBonus;
+            drawText(rightCol - estimateTextWidth(hpStr, 15, false, "Arial"), y, hpStr, "Arial", 15);
+            y += lineH;
         }
+
+        // Level milestone
         double milestoneMult = 1.0;
         if (highestLevelReached >= 75) milestoneMult = GameConfig.SCORE_MILESTONE_LV75;
         else if (highestLevelReached >= 50) milestoneMult = GameConfig.SCORE_MILESTONE_LV50;
         else if (highestLevelReached >= 25) milestoneMult = GameConfig.SCORE_MILESTONE_LV25;
         if (milestoneMult > 1.0) {
-            changeColor(new Color(180, 160, 255));
-            drawText(280, y, "Level Milestone x" + String.format("%.1f", milestoneMult) + "  (reached Lv " + highestLevelReached + ")", "Arial", 16);
-            y += 22;
+            changeColor(new Color(180, 160, 240));
+            drawText(leftCol, y, "Lv." + highestLevelReached + " Bonus", "Arial", 15);
+            changeColor(new Color(200, 180, 255));
+            String multStr = "x" + String.format("%.1f", milestoneMult);
+            drawText(rightCol - estimateTextWidth(multStr, 15, false, "Arial"), y, multStr, "Arial", 15);
+            y += lineH;
         }
 
-        changeColor(Color.WHITE);
-        drawText(300, y + 16, "Press SPACE to restart", "Arial", 28);
+        // Restart hint
+        y += 38;
+        String hint = "Press SPACE to restart";
+        changeColor(new Color(180, 170, 150, 160 + (int)(Math.sin(uiTime() * 2.0) * 40)));
+        drawText(cx - estimateTextWidth(hint, 18, false, "Arial") / 2, y, hint, "Arial", 18);
     }
 
     private String formatTime(double sec) {
@@ -1060,7 +1171,7 @@ public class SurvivalGame extends GameEngine {
         }
     }
 
-    @Override
+    @Override  //按键操作
     public void keyPressed(KeyEvent event) {
         int code = event.getKeyCode();
         if (code >= 0 && code < keys.length) keys[code] = true;
@@ -1612,7 +1723,7 @@ public class SurvivalGame extends GameEngine {
     }
 
     public void addEnemy(Enemy e) {
-        if (enemies.size() < GameConfig.MAX_ENEMIES) enemies.add(e);
+        if (enemies.size() < spawner.currentMaxEnemies()) enemies.add(e);
     }
 
     public void addProjectile(Projectile p) {
@@ -1711,7 +1822,7 @@ public class SurvivalGame extends GameEngine {
         addScreenShake(8);
         for (int i = 0; i < 8; i++) {
             double angle = Math.toRadians(i * 45);
-            Projectile p = new Projectile(this, boss.x, boss.y, 6, 180, angle, 20, 3.5, 0, false, new Color(255, 110, 110));
+            Projectile p = new Projectile(this, boss.x, boss.y, 6, 180, angle, 20, 3.5, 0, false, new Color(255, 110, 110), Projectile.TYPE_ARROW);
             addProjectile(p);
         }
     }

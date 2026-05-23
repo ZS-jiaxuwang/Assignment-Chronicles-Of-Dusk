@@ -430,6 +430,10 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
         mGraphics.fill(new Ellipse2D.Double(x-radius, y-radius, radius*2, radius*2));
     }
 
+    void drawSolidPolygon(int[] xs, int[] ys, int n) {
+        mGraphics.fill(new java.awt.Polygon(xs, ys, n));
+    }
+
     // This function draws text on the screen at (x,y)
     public void drawText(double x, double y, String s) {
         // Draw text on the screen

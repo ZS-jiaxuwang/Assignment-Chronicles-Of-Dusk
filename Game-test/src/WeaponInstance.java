@@ -38,6 +38,16 @@ public class WeaponInstance {
     }
 
     public int currentProjectileCount() {
+        if (def().projectilesPerLevel > 0) {
+            return def().projectileCount + (level - 1) * def().projectilesPerLevel;
+        }
         return def().projectileCount + (level >= 3 ? 1 : 0) + (level >= 5 ? 1 : 0);
+    }
+
+    public double currentSpreadAngle() {
+        if (def().spreadPerLevel > 0) {
+            return def().spreadAngle + (level - 1) * def().spreadPerLevel;
+        }
+        return def().spreadAngle;
     }
 }

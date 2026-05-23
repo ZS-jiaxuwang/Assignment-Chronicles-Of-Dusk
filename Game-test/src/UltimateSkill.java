@@ -79,12 +79,12 @@ public class UltimateSkill {
 
         switch (type) {
             case WHIRLWIND:
-                // Fire a ring of projectiles every 0.3s
+                // Fire a ring of golden sword waves every 0.3s
                 if (((int)((activeTimer + 0.01) / 0.3)) != ((int)((activeTimer + dt + 0.01) / 0.3))) {
-                    for (int i = 0; i < 8; i++) {
-                        double angle = Math.toRadians(i * 45 + activeTimer * 120);
-                        Projectile proj = new Projectile(game, p.x, p.y, 5, 350, angle,
-                            40 * p.damageMultiplier, 1.0, 2, true, new java.awt.Color(255, 220, 80));
+                    for (int i = 0; i < 10; i++) {
+                        double angle = Math.toRadians(i * 36 + activeTimer * 150);
+                        Projectile proj = new Projectile(game, p.x, p.y, 10, 300, angle,
+                            50 * p.damageMultiplier, 0.9, 2, true, new java.awt.Color(255, 200, 40), Projectile.TYPE_SWORD_WAVE);
                         game.addProjectile(proj);
                     }
                 }
@@ -98,7 +98,7 @@ public class UltimateSkill {
                         for (int i = -1; i <= 1; i++) {
                             double a = angle + Math.toRadians(i * 10);
                             Projectile proj = new Projectile(game, p.x, p.y, 3, 550, a,
-                                25 * p.damageMultiplier, 1.5, 0, true, new java.awt.Color(220, 220, 220));
+                                25 * p.damageMultiplier, 1.5, 0, true, new java.awt.Color(220, 220, 220), Projectile.TYPE_ARROW);
                             game.addProjectile(proj);
                         }
                     }

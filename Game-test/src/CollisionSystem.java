@@ -64,9 +64,11 @@ public class CollisionSystem {
                 double dx = proj.x - e.x;
                 double dy = proj.y - e.y;
                 if (dx * dx + dy * dy <= rr * rr) {
+                    if (!proj.canHit(e)) continue;
                     double damage = proj.damage * game.player.damageMultiplier;
                     e.takeDamage(damage, proj);
                     game.vfx.spawnDamageText(e.x, e.y - e.radius, damage);
+                    proj.markHit(e);
                     if (proj.pierces > 0) {
                         proj.pierces--;
                     } else {

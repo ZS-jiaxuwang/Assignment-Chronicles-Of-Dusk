@@ -1,7 +1,7 @@
 import java.awt.Color;
 
 public class WeaponDef {
-    public static final int WHIP = 0;
+    public static final int SWORD = 0;
     public static final int MAGIC_WAND = 1;
     public static final int AXE = 2;
     public static final int GARLIC = 3;
@@ -16,11 +16,11 @@ public class WeaponDef {
     public static final WeaponDef[] ALL = new WeaponDef[20];
 
     static {
-        ALL[WHIP] = new WeaponDef("Whip", 1.2, 15, 520, 9, 0.22, 1, 36, TARGET_FORWARD, new Color(230, 190, 110), 5, -1);
-        ALL[MAGIC_WAND] = new WeaponDef("Magic Wand", 1.0, 10, 400, 6, 1.4, 1, 8, TARGET_NEAREST, new Color(130, 190, 255), 5, -1);
-        ALL[AXE] = new WeaponDef("Axe", 2.0, 20, 260, 10, 2.0, 1, 18, TARGET_FORWARD_ARC, new Color(220, 220, 220), 5, -1);
-        ALL[GARLIC] = new WeaponDef("Garlic", 0.5, 5, 0, 66, 0.05, 1, 0, TARGET_SELF, new Color(205, 255, 180), 5, -1);
-        ALL[KNIFE] = new WeaponDef("Knife", 0.8, 12, 620, 4, 1.8, 1, 8, TARGET_FORWARD, new Color(250, 250, 250), 5, -1);
+        ALL[SWORD] = new WeaponDef("Sword", 1.5, 18, 380, 14, 0.55, 3, 24, TARGET_FORWARD, new Color(255, 200, 40), 5, -1, 1, 9.0);
+        ALL[MAGIC_WAND] = new WeaponDef("Fire Staff", 1.0, 10, 400, 8, 1.4, 1, 8, TARGET_NEAREST, new Color(255, 140, 20), 5, -1, 0, 0.0);
+        ALL[AXE] = new WeaponDef("Arcane Circle", 30.0, 80, 0, 200, 0, 1, 0, TARGET_SELF, new Color(220, 220, 220), 5, -1, 0, 0.0);
+        ALL[GARLIC] = new WeaponDef("Boomerang", 1.8, 4, 350, 24, 4.0, 1, 0, TARGET_RANDOM, new Color(140, 200, 160), 5, -1, 0, 0.0);
+        ALL[KNIFE] = new WeaponDef("Throwing Dagger", 0.35, 7, 500, 5, 0.7, 1, 0, TARGET_NEAREST, new Color(220, 220, 240), 5, -1, 0, 0.0);
     }
 
     public final String name;
@@ -35,10 +35,13 @@ public class WeaponDef {
     public final Color projColor;
     public final int maxLevel;
     public final int evolvesInto;
+    public final int projectilesPerLevel;
+    public final double spreadPerLevel;
 
     public WeaponDef(String name, double baseCooldown, double baseDamage, double projectileSpeed,
                      double projectileRadius, double lifetime, int projectileCount, double spreadAngle,
-                     int targetingMode, Color projColor, int maxLevel, int evolvesInto) {
+                     int targetingMode, Color projColor, int maxLevel, int evolvesInto,
+                     int projectilesPerLevel, double spreadPerLevel) {
         this.name = name;
         this.baseCooldown = baseCooldown;
         this.baseDamage = baseDamage;
@@ -51,5 +54,7 @@ public class WeaponDef {
         this.projColor = projColor;
         this.maxLevel = maxLevel;
         this.evolvesInto = evolvesInto;
+        this.projectilesPerLevel = projectilesPerLevel;
+        this.spreadPerLevel = spreadPerLevel;
     }
 }

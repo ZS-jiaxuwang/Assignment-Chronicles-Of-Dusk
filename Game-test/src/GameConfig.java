@@ -23,7 +23,10 @@ public final class GameConfig {
     public static final double XP_LEVEL_SCALAR = 1.5;
     public static final double XP_QUADRATIC_FACTOR = 0.08;
 
-    public static final int MAX_ENEMIES = 240;
+    public static final int MAX_ENEMIES_START = 40;
+    public static final int MAX_ENEMIES_CAP = 180;
+    public static final double MAX_ENEMIES_GROWTH_INTERVAL = 45.0;
+    public static final int MAX_ENEMIES_PER_GROWTH = 8;
     public static final int MAX_PROJECTILES = 320;
     public static final int MAX_PICKUPS = 180;
 

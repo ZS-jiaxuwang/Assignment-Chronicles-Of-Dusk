@@ -33,7 +33,7 @@ public class CharacterDef {
     public static CharacterDef[] all() {
         return new CharacterDef[] {
             new CharacterDef(WARRIOR, "Warrior", new Color(80, 160, 250), 1.25, 0.95, 1.05,
-                WeaponDef.WHIP, UltimateSkill.WHIRLWIND),
+                WeaponDef.SWORD, UltimateSkill.WHIRLWIND),
             new CharacterDef(MAGE, "Mage", new Color(150, 90, 250), 0.95, 1.0, 1.2,
                 WeaponDef.MAGIC_WAND, UltimateSkill.THUNDER),
             new CharacterDef(ASSASSIN, "Assassin", new Color(220, 220, 220), 0.85, 1.2, 1.1,

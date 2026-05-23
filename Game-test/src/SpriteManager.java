@@ -19,7 +19,6 @@ public class SpriteManager {
 
     // Orc: 100x100 frames
     private static final int O_FRAME = 100;
-    private static final double O_SCALE = 3.2;
 
     private static GameEngine engine;
 
@@ -103,8 +102,9 @@ public class SpriteManager {
             drawFallbackEnemy(cx, cy, radius, color, anim, animTimer);
             return;
         }
-        double rw = O_FRAME * O_SCALE;
-        double rh = O_FRAME * O_SCALE;
+        double scale = 2.2 + radius * 0.03;
+        double rw = O_FRAME * scale;
+        double rh = O_FRAME * scale;
         if (flipX) {
             engine.drawImage(frame, cx + rw * 0.5, cy - rh * ENEMY_Y_ANCHOR, -rw, rh);
         } else {
@@ -115,13 +115,12 @@ public class SpriteManager {
     // ── Single-sheet monsters (one sprite sheet for all animations, 150x150 frames) ──
 
     private static final int M_FRAME = 150;
-    private static final double M_SCALE = 2.0;
     // Lower enemy sprite anchor so visual body aligns with circle hitbox.
     private static final double ENEMY_Y_ANCHOR = 0.55;
 
     public static void drawMonsterSingle(String sheetName, int anim, double animTimer,
                                           double cx, double cy, double radius, Color color,
-                                          boolean flipX) {
+                                          boolean flipX, double scale) {
         if (!AssetLoader.hasAsset(sheetName)) {
             drawFallbackEnemy(cx, cy, radius, color, anim, animTimer);
             return;
@@ -140,13 +139,136 @@ public class SpriteManager {
             drawFallbackEnemy(cx, cy, radius, color, anim, animTimer);
             return;
         }
-        double rw = M_FRAME * M_SCALE;
-        double rh = M_FRAME * M_SCALE;
+        double rw = M_FRAME * scale;
+        double rh = M_FRAME * scale;
         if (flipX) {
             engine.drawImage(frame, cx + rw * 0.5, cy - rh * ENEMY_Y_ANCHOR, -rw, rh);
         } else {
             engine.drawImage(frame, cx - rw * 0.5, cy - rh * ENEMY_Y_ANCHOR, rw, rh);
         }
+    }
+
+    // ── Specialized enemy renderers ──
+
+    public static void drawSlime(int anim, double animTimer, double cx, double cy,
+                                  double radius, Color color) {
+        double scale = 1.5 + radius * 0.025;
+        double squish = 1.0 + Math.sin(animTimer * 5.5) * 0.12;
+        String sheet = AssetLibrary.ENEMY_SLIME;
+        if (!AssetLoader.hasAsset(sheet)) {
+            drawFallbackEnemy(cx, cy, radius, color, anim, animTimer);
+            return;
+        }
+        int totalFrames = totalFrames(sheet, M_FRAME);
+        int col = (anim == ANIM_IDLE) ? 0
+            : ((int)(animTimer * 8.0)) % Math.max(1, totalFrames);
+        Image frame = AssetLoader.getFrame(sheet, col, M_FRAME, M_FRAME);
+        if (frame == null) {
+            drawFallbackEnemy(cx, cy, radius, color, anim, animTimer);
+            return;
+        }
+        double rw = M_FRAME * scale;
+        double rh = M_FRAME * scale * squish;
+        engine.drawImage(frame, cx - rw * 0.5, cy - rh * ENEMY_Y_ANCHOR, rw, rh);
+    }
+
+    public static void drawBat(int anim, double animTimer, double cx, double cy,
+                                double radius, Color color) {
+        double scale = 1.5 + radius * 0.025;
+        double hover = Math.sin(animTimer * 4.0) * 6.0;
+        String sheet = AssetLibrary.ENEMY_BAT;
+        if (!AssetLoader.hasAsset(sheet)) {
+            drawFallbackEnemy(cx, cy + hover, radius, color, anim, animTimer);
+            return;
+        }
+        int totalFrames = totalFrames(sheet, M_FRAME);
+        int col = (anim == ANIM_IDLE) ? ((int)(animTimer * 6.0)) % Math.max(1, totalFrames)
+            : ((int)(animTimer * 10.0)) % Math.max(1, totalFrames);
+        Image frame = AssetLoader.getFrame(sheet, col, M_FRAME, M_FRAME);
+        if (frame == null) {
+            drawFallbackEnemy(cx, cy + hover, radius, color, anim, animTimer);
+            return;
+        }
+        double rw = M_FRAME * scale;
+        double rh = M_FRAME * scale;
+        engine.drawImage(frame, cx - rw * 0.5, cy + hover - rh * ENEMY_Y_ANCHOR, rw, rh);
+    }
+
+    public static void drawGiant(int anim, double animTimer, double cx, double cy,
+                                  double radius, Color color) {
+        double scale = 1.5 + radius * 0.025;
+        String sheet = AssetLibrary.ENEMY_GIANT;
+        if (!AssetLoader.hasAsset(sheet)) {
+            drawFallbackEnemy(cx, cy, radius, color, anim, animTimer);
+            return;
+        }
+        int totalFrames = totalFrames(sheet, M_FRAME);
+        int col = (anim == ANIM_IDLE) ? 0
+            : ((int)(animTimer * 6.0)) % Math.max(1, totalFrames);
+        Image frame = AssetLoader.getFrame(sheet, col, M_FRAME, M_FRAME);
+        if (frame == null) {
+            drawFallbackEnemy(cx, cy, radius, color, anim, animTimer);
+            return;
+        }
+        double rw = M_FRAME * scale;
+        double rh = M_FRAME * scale;
+        engine.drawImage(frame, cx - rw * 0.5, cy - rh * ENEMY_Y_ANCHOR, rw, rh);
+        // Ground shadow
+        engine.changeColor(new Color(0, 0, 0, 80));
+        engine.drawSolidCircle(cx, cy + rh * 0.35, radius * 0.8);
+    }
+
+    public static void drawGhost(int anim, double animTimer, double cx, double cy,
+                                  double radius, Color color) {
+        double scale = 1.5 + radius * 0.025;
+        double floatY = Math.sin(animTimer * 2.5) * 8.0;
+        String sheet = AssetLibrary.ENEMY_GHOST;
+        if (!AssetLoader.hasAsset(sheet)) {
+            drawFallbackEnemy(cx, cy + floatY, radius, color, anim, animTimer);
+            return;
+        }
+        int totalFrames = totalFrames(sheet, M_FRAME);
+        int col = (anim == ANIM_IDLE) ? 0
+            : ((int)(animTimer * 7.0)) % Math.max(1, totalFrames);
+        Image frame = AssetLoader.getFrame(sheet, col, M_FRAME, M_FRAME);
+        if (frame == null) {
+            drawFallbackEnemy(cx, cy + floatY, radius, color, anim, animTimer);
+            return;
+        }
+        double rw = M_FRAME * scale;
+        double rh = M_FRAME * scale;
+        // Ethereal glow
+        double pulse = 0.7 + Math.sin(animTimer * 3.0) * 0.3;
+        engine.changeColor(new Color(200, 200, 255, (int)(60 * pulse)));
+        engine.drawSolidCircle(cx, cy + floatY, radius * 1.3);
+        engine.drawImage(frame, cx - rw * 0.5, cy + floatY - rh * ENEMY_Y_ANCHOR, rw, rh);
+    }
+
+    public static void drawBoss(int anim, double animTimer, double cx, double cy,
+                                 double radius, Color color) {
+        double scale = 1.5 + radius * 0.025;
+        String sheet = AssetLibrary.ENEMY_BOSS;
+        if (!AssetLoader.hasAsset(sheet)) {
+            drawFallbackEnemy(cx, cy, radius, color, anim, animTimer);
+            return;
+        }
+        int totalFrames = totalFrames(sheet, M_FRAME);
+        int col = (anim == ANIM_IDLE) ? 0
+            : ((int)(animTimer * 7.0)) % Math.max(1, totalFrames);
+        Image frame = AssetLoader.getFrame(sheet, col, M_FRAME, M_FRAME);
+        if (frame == null) {
+            drawFallbackEnemy(cx, cy, radius, color, anim, animTimer);
+            return;
+        }
+        double rw = M_FRAME * scale;
+        double rh = M_FRAME * scale;
+        // Menacing aura
+        double pulse = 0.5 + Math.sin(animTimer * 2.0) * 0.5;
+        engine.changeColor(new Color(255, 60, 40, (int)(50 * pulse)));
+        engine.drawSolidCircle(cx, cy, radius * 1.6);
+        engine.changeColor(new Color(255, 100, 60, (int)(30 * pulse)));
+        engine.drawSolidCircle(cx, cy, radius * 2.0);
+        engine.drawImage(frame, cx - rw * 0.5, cy - rh * ENEMY_Y_ANCHOR, rw, rh);
     }
 
     // ── Legacy (no sprites, always fallback) ──

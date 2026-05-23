@@ -112,6 +112,14 @@ public class Player extends Entity {
         invulnTimer = GameConfig.PLAYER_INVULN_SECONDS;
     }
 
+    public void setInvulnTimer(double t) {
+        invulnTimer = t;
+    }
+
+    public double getInvulnTimer() {
+        return invulnTimer;
+    }
+
     @Override
     public void render(GameEngine g) {
         if (!alive) return;

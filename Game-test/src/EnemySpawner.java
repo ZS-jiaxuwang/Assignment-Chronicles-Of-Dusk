@@ -32,22 +32,27 @@ public class EnemySpawner {
             return;
         }
 
-        if (trickleTimer >= 1.0) {
+        if (trickleTimer >= 2.5) {
             trickleTimer = 0;
             spawnEnemyByTime();
         }
 
-        if (waveTimer >= 30.0) {
+        if (waveTimer >= 50.0) {
             waveTimer = 0;
-            int count = 8 + (int)(gameTimer / 30.0) * 2;
+            int count = 5 + (int)(gameTimer / 60.0);
             for (int i = 0; i < count; i++) {
                 spawnEnemyByTime();
             }
         }
     }
 
+    public int currentMaxEnemies() {
+        int bonus = (int)(gameTimer / GameConfig.MAX_ENEMIES_GROWTH_INTERVAL) * GameConfig.MAX_ENEMIES_PER_GROWTH;
+        return Math.min(GameConfig.MAX_ENEMIES_START + bonus, GameConfig.MAX_ENEMIES_CAP);
+    }
+
     private void spawnEnemyByTime() {
-        if (game.enemies.size() >= GameConfig.MAX_ENEMIES) return;
+        if (game.enemies.size() >= currentMaxEnemies()) return;
         int typeRoll = game.rand(100);
         int type;
         if (typeRoll < 30) type = Enemy.SLIME;
