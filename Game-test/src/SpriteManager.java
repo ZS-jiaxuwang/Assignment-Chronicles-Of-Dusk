@@ -184,9 +184,6 @@ public class SpriteManager {
         double rw = M_FRAME * scale;
         double rh = M_FRAME * scale;
         engine.drawImage(frame, cx - rw * 0.5, cy - rh * ENEMY_Y_ANCHOR, rw, rh);
-        // Ground shadow
-        engine.changeColor(new Color(0, 0, 0, 80));
-        engine.drawSolidCircle(cx, cy + rh * 0.35, radius * 0.8);
     }
 
     public static void drawGhost(int anim, double animTimer, double cx, double cy,
@@ -208,16 +205,17 @@ public class SpriteManager {
         }
         double rw = M_FRAME * scale;
         double rh = M_FRAME * scale;
-        // Ethereal glow
-        double pulse = 0.7 + Math.sin(animTimer * 3.0) * 0.3;
-        engine.changeColor(new Color(200, 200, 255, (int)(60 * pulse)));
-        engine.drawSolidCircle(cx, cy + floatY, radius * 1.3);
         engine.drawImage(frame, cx - rw * 0.5, cy + floatY - rh * ENEMY_Y_ANCHOR, rw, rh);
+    }
+
+    private static double normalMonsterScale(double radius) {
+        return 1.5 + radius * 0.025;
     }
 
     public static void drawBoss(int anim, double animTimer, double cx, double cy,
                                  double radius, Color color) {
-        double scale = 1.5 + radius * 0.025;
+        // Boss renders at 2x the visual size of a typical small enemy (slime, r=24).
+        double scale = normalMonsterScale(24) * 2.0;
         String sheet = AssetLibrary.ENEMY_BOSS;
         if (!AssetLoader.hasAsset(sheet)) {
             drawFallbackEnemy(cx, cy, radius, color, anim, animTimer);
@@ -233,12 +231,6 @@ public class SpriteManager {
         }
         double rw = M_FRAME * scale;
         double rh = M_FRAME * scale;
-        // Menacing aura
-        double pulse = 0.5 + Math.sin(animTimer * 2.0) * 0.5;
-        engine.changeColor(new Color(255, 60, 40, (int)(50 * pulse)));
-        engine.drawSolidCircle(cx, cy, radius * 1.6);
-        engine.changeColor(new Color(255, 100, 60, (int)(30 * pulse)));
-        engine.drawSolidCircle(cx, cy, radius * 2.0);
         engine.drawImage(frame, cx - rw * 0.5, cy - rh * ENEMY_Y_ANCHOR, rw, rh);
     }
 
