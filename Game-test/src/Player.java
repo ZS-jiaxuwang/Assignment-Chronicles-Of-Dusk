@@ -88,11 +88,11 @@ public class Player extends Entity {
         moveSpeed = GameConfig.PLAYER_BASE_SPEED * character.speedMultiplier
                     * CharacterProgression.speedMultiplier(newTier);
 
-        if (newTier == 3 && oldTier < 3) {
+        if (newTier == 2 && oldTier < 2) {
             ultimate.cooldownTimer = 0;
         }
-        if (newTier >= 4) {
-            ultimate.setCooldown(GameConfig.ULTIMATE_COOLDOWN_TIER4);
+        if (newTier >= 3) {
+            ultimate.setCooldown(GameConfig.ULTIMATE_COOLDOWN_TIER3);
         }
     }
 
@@ -133,15 +133,15 @@ public class Player extends Entity {
 
         // Ultimate active glow
         if (ultimate.active) {
-            Color glow = (tier >= 4) ? new Color(255, 220, 40, 60 + (int)(Math.sin(animTimer * 8) * 40))
+            Color glow = (tier >= 3) ? new Color(255, 220, 40, 60 + (int)(Math.sin(animTimer * 8) * 40))
                                      : new Color(200, 200, 255, 50 + (int)(Math.sin(animTimer * 6) * 30));
             g.changeColor(glow);
             g.drawSolidCircle(x, y, radius * 1.3);
         }
 
         // Tier aura
-        if (tier >= 3) {
-            Color aura = (tier >= 4) ? new Color(255, 200, 40, 25 + (int)(Math.sin(animTimer * 3) * 15))
+        if (tier >= 2) {
+            Color aura = (tier >= 3) ? new Color(255, 200, 40, 25 + (int)(Math.sin(animTimer * 3) * 15))
                                      : new Color(180, 150, 255, 20 + (int)(Math.sin(animTimer * 3) * 10));
             g.changeColor(aura);
             g.drawSolidCircle(x, y, radius * 1.1);
