@@ -3,7 +3,6 @@ import java.awt.Color;
 public class CharacterDef {
     public static final int WARRIOR = 0;
     public static final int MAGE = 1;
-    public static final int ASSASSIN = 2;
 
     public final int id;
     public final String name;
@@ -35,9 +34,7 @@ public class CharacterDef {
             new CharacterDef(WARRIOR, "Warrior", new Color(80, 160, 250), 1.25, 0.95, 1.05,
                 WeaponDef.SWORD, UltimateSkill.WHIRLWIND),
             new CharacterDef(MAGE, "Mage", new Color(150, 90, 250), 0.95, 1.0, 1.2,
-                WeaponDef.MAGIC_WAND, UltimateSkill.THUNDER),
-            new CharacterDef(ASSASSIN, "Assassin", new Color(220, 220, 220), 0.85, 1.2, 1.1,
-                WeaponDef.KNIFE, UltimateSkill.SHADOW_CLONE)
+                WeaponDef.MAGIC_WAND, UltimateSkill.THUNDER)
         };
     }
 }

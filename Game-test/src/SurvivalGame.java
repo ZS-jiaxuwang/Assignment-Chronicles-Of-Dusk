@@ -200,7 +200,7 @@ public class SurvivalGame extends GameEngine {
         spawner.update(dt * combatPaceMultiplier());
         weaponManager.update(dt);
 
-        for (Enemy e : enemies) e.update(dt);
+        for (Enemy e : new ArrayList<>(enemies)) e.update(dt);
         for (Projectile p : projectiles) p.update(dt);
         for (Pickup p : pickups) p.update(dt);
 
@@ -472,7 +472,7 @@ public class SurvivalGame extends GameEngine {
         int panelH = height() - 94;
         int cardW = 250;
         int cardH = 308;
-        int gap = (panelW - cardW * 3) / 4;
+        int gap = (panelW - cardW * characters.length) / (characters.length + 1);
         if (gap < 24) gap = 24;
         int cardY = panelY + 142;
 
@@ -1061,12 +1061,11 @@ public class SurvivalGame extends GameEngine {
             String[] lines2 = new String[] {
                 "But hope has not yet perished...",
                 "",
-                "Three champions stand ready to answer",
+                "Two champions stand ready to answer",
                 "the call of destiny.",
                 "",
                 "A warrior of unyielding courage.",
                 "A mage of boundless arcane power.",
-                "An assassin who walks in shadow.",
                 "",
                 "One of them shall rise...",
                 "and turn the tide of darkness.",
@@ -1239,7 +1238,6 @@ public class SurvivalGame extends GameEngine {
             }
             if (code == KeyEvent.VK_1) startRun(characters[0]);
             if (code == KeyEvent.VK_2) startRun(characters[1]);
-            if (code == KeyEvent.VK_3) startRun(characters[2]);
         } else if (gameState == STATE_UPGRADE_PAUSE) {
             if (code == KeyEvent.VK_1) upgradeSystem.choose(0);
             if (code == KeyEvent.VK_2) upgradeSystem.choose(1);
@@ -1366,16 +1364,11 @@ public class SurvivalGame extends GameEngine {
             drawSolidRectangle(cx - 2, cy - 16, 4, 22);
             drawSolidRectangle(cx - 10, cy - 12, 20, 4);
             drawSolidRectangle(cx - 6, cy + 8, 12, 4);
-        } else if (id == CharacterDef.MAGE) {
+        } else {
             changeColor(new Color(240, 230, 255));
             drawSolidRectangle(cx - 2, cy - 14, 4, 20);
             drawSolidCircle(cx, cy - 18, 6);
             drawSolidRectangle(cx - 10, cy + 8, 20, 3);
-        } else {
-            changeColor(new Color(235, 235, 235));
-            drawSolidRectangle(cx - 1, cy - 15, 3, 20);
-            drawSolidRectangle(cx - 8, cy + 8, 16, 3);
-            drawSolidRectangle(cx + 6, cy - 14, 3, 12);
         }
     }
 
@@ -1397,26 +1390,22 @@ public class SurvivalGame extends GameEngine {
 
     private Color classAccent(int id) {
         if (id == CharacterDef.WARRIOR) return new Color(201, 143, 76);
-        if (id == CharacterDef.MAGE) return new Color(124, 113, 206);
-        return new Color(174, 177, 191);
+        return new Color(124, 113, 206);
     }
 
     private String classTitle(int id) {
         if (id == CharacterDef.WARRIOR) return "Crimson Vanguard";
-        if (id == CharacterDef.MAGE) return "Arcane Scholar";
-        return "Shadow Duelist";
+        return "Arcane Scholar";
     }
 
     private String classTagline(int id) {
         if (id == CharacterDef.WARRIOR) return "Frontline bruiser, stable sustain.";
-        if (id == CharacterDef.MAGE) return "Burst caster, strong ranged pressure.";
-        return "Fast assassin, lethal hit-and-run.";
+        return "Burst caster, strong ranged pressure.";
     }
 
     private String classHint(int id) {
         if (id == CharacterDef.WARRIOR) return "Great for beginners and long fights.";
-        if (id == CharacterDef.MAGE) return "Master spacing to survive.";
-        return "High tempo, high reward.";
+        return "Master spacing to survive.";
     }
 
     private Color tierThemeColor() {
@@ -1573,7 +1562,7 @@ public class SurvivalGame extends GameEngine {
         int panelW = width() - 96;
         int cardW = 250;
         int cardH = 308;
-        int gap = (panelW - cardW * 3) / 4;
+        int gap = (panelW - cardW * characters.length) / (characters.length + 1);
         if (gap < 24) gap = 24;
         int cardY = panelY + 142;
 

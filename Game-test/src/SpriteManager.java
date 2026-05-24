@@ -54,35 +54,6 @@ public class SpriteManager {
         return AssetLibrary.swordsmanAnimFile(tier, anim);
     }
 
-    // ── Assassin (80x80 frames, scale 1.6 = 128px) ──
-    private static final int A_FRAME = 80;
-    private static final double A_SCALE = 1.6;
-
-    public static void drawAssassin(int tier, int anim, int dir, double animTimer,
-                                     double cx, double cy) {
-        String file = assassinFile(tier, anim);
-        if (file == null || !AssetLoader.hasAsset(file)) {
-            drawFallbackCharacter(cx, cy, 16, new Color(220, 220, 220), dir, anim, animTimer);
-            return;
-        }
-        int cols = totalFrames(file, A_FRAME);
-        double fps = animFps(anim);
-        int col = ((int)(animTimer * fps)) % Math.max(1, cols);
-        int row = Math.min(dir, 3);
-        Image frame = AssetLoader.getFrame(file, col, row, A_FRAME, A_FRAME);
-        if (frame == null) {
-            drawFallbackCharacter(cx, cy, 16, new Color(220, 220, 220), dir, anim, animTimer);
-            return;
-        }
-        double rw = A_FRAME * A_SCALE;
-        double rh = A_FRAME * A_SCALE;
-        engine.drawImage(frame, cx - rw * 0.5, cy - rh * 0.6, rw, rh);
-    }
-
-    private static String assassinFile(int tier, int anim) {
-        return AssetLibrary.assassinAnimFile(tier, anim);
-    }
-
     // ── Orc ──
 
     public static void drawOrc(int anim, double animTimer,

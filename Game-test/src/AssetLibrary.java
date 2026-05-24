@@ -12,7 +12,6 @@ public final class AssetLibrary {
 
     public static final String CHAR_WARRIOR = "character_warrior.png";
     public static final String CHAR_MAGE = "character_mage.png";
-    public static final String CHAR_ASSASSIN = "character_assassin.png";
 
     public static final String ENEMY_SLIME = "enemy_slime.png";
     public static final String ENEMY_BAT = "enemy_bat.png";
@@ -64,20 +63,6 @@ public final class AssetLibrary {
             case SpriteManager.ANIM_ATTACK: return prefix + "_attack.png";
             case SpriteManager.ANIM_HURT: return prefix + "_hurt.png";
             case SpriteManager.ANIM_DEATH: return prefix + "_death.png";
-            default: return prefix + "_idle.png";
-        }
-    }
-
-    public static String assassinAnimFile(int tier, int anim) {
-        String prefix;
-        if (tier >= 4) prefix = "char_assassin_lvl3";
-        else if (tier >= 3) prefix = "char_assassin_lvl2";
-        else prefix = "char_assassin_lvl1";
-        switch (anim) {
-            case SpriteManager.ANIM_WALK: return prefix + "_run.png";
-            case SpriteManager.ANIM_ATTACK: return prefix + "_attack.png";
-            case SpriteManager.ANIM_HURT: return prefix + "_hurt.png";
-            case SpriteManager.ANIM_DEATH: return prefix + "_hurt.png";
             default: return prefix + "_idle.png";
         }
     }

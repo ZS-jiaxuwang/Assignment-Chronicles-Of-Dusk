@@ -149,8 +149,6 @@ public class Player extends Entity {
 
         if (character.getId() == CharacterDef.WARRIOR) {
             SpriteManager.drawSwordsman(tier, anim, dir, animTimer, x, y);
-        } else if (character.getId() == CharacterDef.ASSASSIN) {
-            SpriteManager.drawAssassin(tier, anim, dir, animTimer, x, y);
         } else {
             Color c = (hitFlashTimer > 0 && hitFlashTimer % 2 == 0) ? Color.WHITE : baseColor;
             SpriteManager.drawCharacter(getAssetKey(), anim, dir, animTimer, x, y, radius, c);
@@ -164,7 +162,6 @@ public class Player extends Entity {
     private String getAssetKey() {
         int id = character.getId();
         if (id == CharacterDef.MAGE) return AssetLibrary.CHAR_MAGE;
-        if (id == CharacterDef.ASSASSIN) return AssetLibrary.CHAR_ASSASSIN;
         return AssetLibrary.CHAR_WARRIOR;
     }
 
