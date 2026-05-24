@@ -55,8 +55,8 @@ public final class AssetLibrary {
 
     public static String swordsmanAnimFile(int tier, int anim) {
         String prefix;
-        if (tier >= 4) prefix = "char_swordsman_lvl3";
-        else if (tier >= 3) prefix = "char_swordsman_lvl2";
+        if (tier >= 3) prefix = "char_swordsman_lvl3";
+        else if (tier >= 2) prefix = "char_swordsman_lvl2";
         else prefix = "char_swordsman_lvl1";
         switch (anim) {
             case SpriteManager.ANIM_WALK: return prefix + "_run.png";

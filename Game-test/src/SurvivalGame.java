@@ -24,6 +24,7 @@ public class SurvivalGame extends GameEngine {
     double introTimer;
     int introPhase;
     double introScrollOffset;
+    private java.awt.image.BufferedImage introBgCache;
     int swapPendingWeaponId;
     WeaponRarity swapPendingRarity;
     double tierUpTimer;
@@ -104,6 +105,12 @@ public class SurvivalGame extends GameEngine {
         // ── Audio: state transitions ──
         if (gameState != prevGameState) {
             handleAudioStateChange(prevGameState, gameState);
+            if (gameState == STATE_INTRO) {
+                introTimer = 0;
+                introPhase = 0;
+                introScrollOffset = height();
+                introBgCache = null;
+            }
             prevGameState = gameState;
         }
         // ── Audio: boss detection during combat ──
@@ -345,16 +352,15 @@ public class SurvivalGame extends GameEngine {
 
         String tierLabel = "";
         Color tierColor = Color.WHITE;
-        if (player.tier >= 4) { tierLabel = " T4"; tierColor = new Color(255, 200, 40); }
-        else if (player.tier >= 3) { tierLabel = " T3"; tierColor = new Color(180, 80, 255); }
-        else if (player.tier >= 2) { tierLabel = " T2"; tierColor = new Color(80, 180, 255); }
+        if (player.tier >= 3) { tierLabel = " T3"; tierColor = new Color(255, 200, 40); }
+        else if (player.tier >= 2) { tierLabel = " T2"; tierColor = new Color(180, 80, 255); }
         changeColor(tierColor);
         drawText(300, 49, "Lv " + upgradeSystem.level() + tierLabel, "Arial", 16);
         changeColor(Color.WHITE);
         drawText(300, 72, "Time " + formatTime(runTimeSeconds), "Arial", 14);
 
         // Ultimate cooldown
-        if (player.tier >= 3 && player.ultimate != null) {
+        if (player.tier >= 2 && player.ultimate != null) {
             double uPct = player.ultimate.cooldownPct();
             int ux = 300;
             int uy = 82;
@@ -642,7 +648,7 @@ public class SurvivalGame extends GameEngine {
         drawTierStatCard(x + 458, y + 160, 190, 102, "SPD", statGainPct(CharacterProgression.speedMultiplier(oldTier), CharacterProgression.speedMultiplier(pendingTier)), new Color(126, 198, 255));
 
         changeColor(new Color(225, 214, 182));
-        drawCenteredText(x, y + 282, w, pendingTier >= 3
+        drawCenteredText(x, y + 282, w, pendingTier >= 2
             ? "Ultimate skill unlocked! Press SPACE to cast."
             : "Core stats improved. Keep pushing your build.", FONT_BODY, 16);
     }
@@ -795,8 +801,7 @@ public class SurvivalGame extends GameEngine {
 
         // Level milestone
         double milestoneMult = 1.0;
-        if (highestLevelReached >= 75) milestoneMult = GameConfig.SCORE_MILESTONE_LV75;
-        else if (highestLevelReached >= 50) milestoneMult = GameConfig.SCORE_MILESTONE_LV50;
+        if (highestLevelReached >= 50) milestoneMult = GameConfig.SCORE_MILESTONE_LV50;
         else if (highestLevelReached >= 25) milestoneMult = GameConfig.SCORE_MILESTONE_LV25;
         if (milestoneMult > 1.0) {
             changeColor(new Color(180, 160, 240));
@@ -836,13 +841,13 @@ public class SurvivalGame extends GameEngine {
         if (introTimer > 1.5 && introPhase == 0) {
             introPhase = 1;
         }
-        if (introTimer > 7.0 && introPhase == 1) {
+        if (introTimer > 14.0 && introPhase == 1) {
             introPhase = 2;
         }
-        if (introTimer > 14.5 && introPhase == 2) {
+        if (introTimer > 17.5 && introPhase == 2) {
             introPhase = 3;
         }
-        if (introTimer > 22.0) {
+        if (introTimer > 24.0) {
             gameState = STATE_CHAR_SELECT;
         }
     }
@@ -852,15 +857,91 @@ public class SurvivalGame extends GameEngine {
         int H = height();
         double t = introTimer;
 
-        for (int i = 0; i < H; i++) {
-            double ratio = (double)i / H;
-            int r = (int)(8 + ratio * 18);
-            int g = (int)(6 + ratio * 20);
-            int b = (int)(16 + ratio * 32);
-            changeColor(r, g, b);
-            drawSolidRectangle(0, i, W, 1);
+        // Build static background cache once
+        if (introBgCache == null) {
+            java.awt.Graphics2D saved = mGraphics;
+            introBgCache = new java.awt.image.BufferedImage(W, H, java.awt.image.BufferedImage.TYPE_INT_RGB);
+            mGraphics = introBgCache.createGraphics();
+            mGraphics.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+
+            mGraphics.setPaint(new java.awt.GradientPaint(0, 0, new Color(8, 6, 16), 0, H, new Color(26, 26, 48)));
+            mGraphics.fillRect(0, 0, W, H);
+
+            changeColor(new Color(235, 228, 200, 210));
+            drawSolidCircle(W - 130, 75, 36);
+            changeColor(new Color(16, 14, 26));
+            drawSolidCircle(W - 120, 71, 31);
+
+            int[] mtnX = new int[] {0, 60, 140, 200, 280, 370, 440, 520, 620, 710, 790, 880, 960};
+            int[] mtnH = new int[] {90, 130, 85, 150, 100, 170, 110, 140, 95, 165, 105, 145, 90};
+            for (int i = 0; i < mtnX.length - 2; i++) {
+                changeColor(new Color(18, 14, 24, 220));
+                int cx = (mtnX[i] + mtnX[i + 1]) / 2;
+                int peakY = H - 80 - mtnH[i];
+                fillTriangle(mtnX[i], H - 70, cx, peakY, mtnX[i + 1], H - 70);
+            }
+
+            changeColor(new Color(22, 16, 28));
+            drawSolidRectangle(0, H - 68, W, 68);
+
+            int cxBase = W / 2;
+            int cyBase = H - 68;
+            changeColor(new Color(24, 18, 30));
+            drawSolidRectangle(cxBase - 50, cyBase - 140, 100, 140);
+            drawSolidRectangle(cxBase - 95, cyBase - 110, 40, 110);
+            drawSolidRectangle(cxBase + 55, cyBase - 110, 40, 110);
+            drawSolidRectangle(cxBase - 145, cyBase - 75, 30, 75);
+            drawSolidRectangle(cxBase + 115, cyBase - 75, 30, 75);
+            for (int i = 0; i < 5; i++) {
+                drawSolidRectangle(cxBase - 46 + i * 19, cyBase - 152, 12, 14);
+            }
+            for (int i = 0; i < 3; i++) {
+                drawSolidRectangle(cxBase - 93 + i * 14, cyBase - 122, 9, 12);
+                drawSolidRectangle(cxBase + 57 + i * 14, cyBase - 122, 9, 12);
+            }
+            for (int i = 0; i < 2; i++) {
+                drawSolidRectangle(cxBase - 143 + i * 16, cyBase - 87, 8, 12);
+                drawSolidRectangle(cxBase + 117 + i * 16, cyBase - 87, 8, 12);
+            }
+            changeColor(new Color(34, 24, 20));
+            drawSolidRectangle(cxBase - 16, cyBase - 52, 32, 52);
+            drawSolidRectangle(cxBase - 16, cyBase - 52, 32, 10);
+            changeColor(new Color(56, 42, 20));
+            drawSolidRectangle(cxBase - 16, cyBase - 52, 32, 2);
+            Color windowGlow = new Color(255, 200, 100, 180);
+            changeColor(windowGlow);
+            drawSolidRectangle(cxBase - 28, cyBase - 90, 10, 14);
+            drawSolidRectangle(cxBase + 18, cyBase - 90, 10, 14);
+            drawSolidRectangle(cxBase - 6, cyBase - 110, 10, 14);
+            drawSolidRectangle(cxBase - 82, cyBase - 70, 8, 12);
+            drawSolidRectangle(cxBase + 74, cyBase - 70, 8, 12);
+
+            changeColor(new Color(46, 36, 22));
+            drawSolidRectangle(cxBase - 25, cyBase - 58, 3, 10);
+            drawSolidRectangle(cxBase + 23, cyBase - 58, 3, 10);
+
+            changeColor(new Color(80, 78, 90));
+            drawSolidRectangle(110 - 3, cyBase + 10, 6, 24);
+            changeColor(new Color(180, 185, 200));
+            drawSolidRectangle(110 - 2, cyBase - 34, 4, 48);
+            changeColor(new Color(210, 215, 230));
+            drawSolidRectangle(110 - 1, cyBase - 34, 2, 46);
+            changeColor(new Color(160, 140, 90));
+            drawSolidRectangle(110 - 12, cyBase + 8, 24, 5);
+            changeColor(new Color(180, 155, 90));
+            drawSolidCircle(110, cyBase + 7, 5);
+
+            mGraphics.dispose();
+            mGraphics = saved;
         }
 
+        // Draw cached static background
+        mGraphics.drawImage(introBgCache, 0, 0, null);
+
+        int cxBase = W / 2;
+        int cyBase = H - 68;
+
+        // Stars (dynamic: twinkle)
         int[] starSeeds = new int[] {17, 42, 73, 101, 138, 179, 211, 259, 301, 344, 389, 423, 467, 512, 556, 601, 47, 88, 124, 166, 198, 243, 288, 327, 371, 415, 458, 503, 548, 586};
         for (int i = 0; i < starSeeds.length; i++) {
             int sx = (starSeeds[i] * 37 + 131) % W;
@@ -872,87 +953,9 @@ public class SurvivalGame extends GameEngine {
             drawSolidRectangle(sx, sy, size, size);
         }
 
-        int moonX = W - 130;
-        int moonY = 75;
-        changeColor(new Color(235, 228, 200, 210));
-        drawSolidCircle(moonX, moonY, 36);
-        changeColor(new Color(16, 14, 26));
-        drawSolidCircle(moonX + 10, moonY - 4, 31);
-
-        changeColor(new Color(18, 14, 24, 220));
-        int[] mtnX = new int[] {0, 60, 140, 200, 280, 370, 440, 520, 620, 710, 790, 880, 960};
-        int[] mtnH = new int[] {90, 130, 85, 150, 100, 170, 110, 140, 95, 165, 105, 145, 90};
-        for (int i = 0; i < mtnX.length - 2; i++) {
-            changeColor(new Color(18, 14, 24, 220));
-            int cx = (mtnX[i] + mtnX[i + 1]) / 2;
-            int peakY = H - 80 - mtnH[i];
-            int[] px = new int[] {mtnX[i], cx, mtnX[i + 1]};
-            int[] py = new int[] {H - 70, peakY, H - 70};
-            fillTriangle(px[0], py[0], px[1], py[1], px[2], py[2]);
-        }
-
-        // Ground
-        changeColor(new Color(22, 16, 28));
-        drawSolidRectangle(0, H - 68, W, 68);
-
-        // Castle silhouette (pixel art style)
-        int cxBase = W / 2;
-        int cyBase = H - 68;
-        Color castleColor = new Color(24, 18, 30);
-        changeColor(castleColor);
-
-        // Main keep
-        drawSolidRectangle(cxBase - 50, cyBase - 140, 100, 140);
-        // Left tower
-        drawSolidRectangle(cxBase - 95, cyBase - 110, 40, 110);
-        // Right tower
-        drawSolidRectangle(cxBase + 55, cyBase - 110, 40, 110);
-        // Left small tower
-        drawSolidRectangle(cxBase - 145, cyBase - 75, 30, 75);
-        // Right small tower
-        drawSolidRectangle(cxBase + 115, cyBase - 75, 30, 75);
-
-        // Battlements - main keep
-        for (int i = 0; i < 5; i++) {
-            drawSolidRectangle(cxBase - 46 + i * 19, cyBase - 152, 12, 14);
-        }
-        // Battlements - left tower
-        for (int i = 0; i < 3; i++) {
-            drawSolidRectangle(cxBase - 93 + i * 14, cyBase - 122, 9, 12);
-        }
-        // Battlements - right tower
-        for (int i = 0; i < 3; i++) {
-            drawSolidRectangle(cxBase + 57 + i * 14, cyBase - 122, 9, 12);
-        }
-        // Battlements - small towers
-        for (int i = 0; i < 2; i++) {
-            drawSolidRectangle(cxBase - 143 + i * 16, cyBase - 87, 8, 12);
-            drawSolidRectangle(cxBase + 117 + i * 16, cyBase - 87, 8, 12);
-        }
-
-        // Castle gate
-        changeColor(new Color(34, 24, 20));
-        drawSolidRectangle(cxBase - 16, cyBase - 52, 32, 52);
-        int gateArchY = cyBase - 52;
-        drawSolidRectangle(cxBase - 16, gateArchY, 32, 10);
-        changeColor(new Color(56, 42, 20));
-        drawSolidRectangle(cxBase - 16, gateArchY, 32, 2);
-
-        // Windows (lit)
-        Color windowGlow = new Color(255, 200, 100, 180);
-        changeColor(windowGlow);
-        drawSolidRectangle(cxBase - 28, cyBase - 90, 10, 14);
-        drawSolidRectangle(cxBase + 18, cyBase - 90, 10, 14);
-        drawSolidRectangle(cxBase - 6, cyBase - 110, 10, 14);
-        // Tower windows
-        drawSolidRectangle(cxBase - 82, cyBase - 70, 8, 12);
-        drawSolidRectangle(cxBase + 74, cyBase - 70, 8, 12);
-
-        // Torches by gate - left
+        // Torch flames (dynamic: flicker)
         int torchLX = cxBase - 24;
         int torchLY = cyBase - 58;
-        changeColor(new Color(46, 36, 22));
-        drawSolidRectangle(torchLX - 1, torchLY, 3, 10);
         double flickerA = Math.sin(t * 12.0) * 0.2 + Math.sin(t * 17.3) * 0.15;
         int flameAlpha = (int)(180 + flickerA * 60);
         changeColor(new Color(255, 160, 40, flameAlpha));
@@ -960,11 +963,8 @@ public class SurvivalGame extends GameEngine {
         changeColor(new Color(255, 210, 80, 140));
         drawSolidCircle(torchLX, torchLY - 5, 3);
 
-        // Torches by gate - right
         int torchRX = cxBase + 24;
         int torchRY = cyBase - 58;
-        changeColor(new Color(46, 36, 22));
-        drawSolidRectangle(torchRX - 1, torchRY, 3, 10);
         double flickerB = Math.sin(t * 11.3 + 1.7) * 0.2 + Math.sin(t * 19.1) * 0.15;
         int flameAlphaB = (int)(180 + flickerB * 60);
         changeColor(new Color(255, 160, 40, flameAlphaB));
@@ -972,28 +972,7 @@ public class SurvivalGame extends GameEngine {
         changeColor(new Color(255, 210, 80, 140));
         drawSolidCircle(torchRX, torchRY - 5, 3);
 
-        // Sword in stone (pixel art) - bottom left area
-        int swordX = 110;
-        int swordY = cyBase;
-        changeColor(new Color(80, 78, 90));
-        drawSolidRectangle(swordX - 3, swordY + 10, 6, 24);
-        // Blade
-        changeColor(new Color(180, 185, 200));
-        drawSolidRectangle(swordX - 2, swordY - 34, 4, 48);
-        changeColor(new Color(210, 215, 230));
-        drawSolidRectangle(swordX - 1, swordY - 34, 2, 46);
-        // Crossguard
-        changeColor(new Color(160, 140, 90));
-        drawSolidRectangle(swordX - 12, swordY + 8, 24, 5);
-        // Pommel
-        changeColor(new Color(180, 155, 90));
-        drawSolidCircle(swordX, swordY + 7, 5);
-        // Glow on blade
-        double bladeGlow = 0.55 + 0.45 * Math.sin(t * 2.4);
-        changeColor(new Color(160, 200, 255, (int)(80 * bladeGlow)));
-        drawSolidRectangle(swordX - 1, swordY - 30, 2, 38);
-
-        // Embers rising from torches
+        // Embers (dynamic)
         for (int i = 0; i < 6; i++) {
             double ex = torchLX - 6 + (i * 17 + 37) % 16;
             double ey = torchLY - 8 - (t * 30 + i * 53) % 60;
@@ -1004,12 +983,16 @@ public class SurvivalGame extends GameEngine {
             }
         }
 
+        // Sword glow (dynamic)
+        double bladeGlow = 0.55 + 0.45 * Math.sin(t * 2.4);
+        changeColor(new Color(160, 200, 255, (int)(80 * bladeGlow)));
+        drawSolidRectangle(110 - 1, cyBase - 30, 2, 38);
+
         // Narrative text phases
         int textCenterX = W / 2;
         int textY = H / 2 + 30;
 
         if (introPhase == 0) {
-            // Phase 0: opening title
             double fadeIn = Math.min(1.0, introTimer / 1.2);
             int alpha = (int)(fadeIn * 240);
             drawCenteredEmbossedText(0, textY - 20, W, "CHRONICLES OF DUSK", 44, FONT_TITLE,
@@ -1017,7 +1000,6 @@ public class SurvivalGame extends GameEngine {
             changeColor(new Color(188, 165, 112, alpha));
             drawCenteredText(0, textY + 28, W, "A tale of darkness, courage, and redemption", FONT_BODY, 15);
         } else if (introPhase == 1) {
-            // Phase 1: scrolling narrative
             double scrollY = introScrollOffset;
             String[] lines = new String[] {
                 "Long ago, in the war-torn lands of Dusk...",
@@ -1040,6 +1022,8 @@ public class SurvivalGame extends GameEngine {
                 "Now, only a single bastion remains...",
             };
             int lineHeight = 22;
+            double phaseFadeOut = 1.0;
+            if (introTimer > 12.0) phaseFadeOut = Math.max(0.0, (14.0 - introTimer) / 2.0);
             for (int i = 0; i < lines.length; i++) {
                 int ly = (int)(scrollY + i * lineHeight);
                 if (ly > H / 5 && ly < H - 40) {
@@ -1047,7 +1031,7 @@ public class SurvivalGame extends GameEngine {
                     if (ly < H / 5 + 40) lineFade = (ly - H / 5) / 40.0;
                     if (ly > H - 120) lineFade = (H - 40 - ly) / 80.0;
                     if (lineFade > 0.01 && !lines[i].isEmpty()) {
-                        int la = (int)(200 * Math.min(1.0, lineFade));
+                        int la = (int)(200 * Math.min(1.0, lineFade * phaseFadeOut));
                         changeColor(new Color(210, 198, 172, la));
                         int tx = textCenterX - estimateTextWidth(lines[i], 16, false, FONT_BODY) / 2;
                         drawText(tx, ly, lines[i], FONT_BODY, 16);
@@ -1055,8 +1039,7 @@ public class SurvivalGame extends GameEngine {
                 }
             }
         } else if (introPhase == 2) {
-            // Phase 2: hero call
-            double fadeIn = Math.min(1.0, (introTimer - 7.0) / 1.5);
+            double fadeIn = Math.min(1.0, (introTimer - 14.0) / 1.5);
             int alpha = (int)(fadeIn * 220);
             String[] lines2 = new String[] {
                 "But hope has not yet perished...",
@@ -1081,12 +1064,10 @@ public class SurvivalGame extends GameEngine {
                 }
             }
         } else if (introPhase == 3) {
-            // Phase 3: final call + transition
-            double phaseTime = introTimer - 14.5;
+            double phaseTime = introTimer - 17.5;
             double fadeIn = Math.min(1.0, phaseTime / 1.5);
             int alpha = (int)(fadeIn * 240);
 
-            // Sparkle/flash effect
             double flash = Math.sin(phaseTime * 4.0) * 0.5 + 0.5;
             if (flash > 0.7) {
                 changeColor(new Color(255, 240, 200, (int)(60 * (flash - 0.7) / 0.3)));
@@ -1098,9 +1079,8 @@ public class SurvivalGame extends GameEngine {
             changeColor(new Color(210, 190, 150, alpha));
             drawCenteredText(0, textY + 4, W, "Choose your champion and reclaim the fallen kingdom", FONT_BODY, 16);
 
-            // Fade to white near end
-            if (phaseTime > 5.5) {
-                double endFade = (phaseTime - 5.5) / 2.0;
+            if (phaseTime > 4.5) {
+                double endFade = Math.min(1.0, (phaseTime - 4.5) / 2.0);
                 changeColor(new Color(255, 252, 245, (int)(endFade * 240)));
                 drawSolidRectangle(0, 0, W, H);
             }
@@ -1151,17 +1131,17 @@ public class SurvivalGame extends GameEngine {
         playerAuraTrailTimer += dt;
         double moveMag = Math.abs(player.vx) + Math.abs(player.vy);
         boolean moving = moveMag > 16;
-        boolean empowered = player.tier >= 3 || (player.ultimate != null && player.ultimate.active);
+        boolean empowered = player.tier >= 2 || (player.ultimate != null && player.ultimate.active);
         double interval = empowered ? 0.03 : 0.06;
         if (!moving && !empowered) interval = 0.12;
         while (playerAuraTrailTimer >= interval) {
             playerAuraTrailTimer -= interval;
             Color c = player.getCharacter().color;
             if (player.ultimate != null && player.ultimate.active) {
-                c = (player.tier >= 4) ? new Color(255, 214, 112) : new Color(178, 162, 255);
-            } else if (player.tier >= 4) {
-                c = new Color(242, 182, 86);
+                c = (player.tier >= 3) ? new Color(255, 214, 112) : new Color(178, 162, 255);
             } else if (player.tier >= 3) {
+                c = new Color(242, 182, 86);
+            } else if (player.tier >= 2) {
                 c = new Color(175, 134, 232);
             }
             double ox = rand(18.0) - 9.0;
@@ -1197,7 +1177,7 @@ public class SurvivalGame extends GameEngine {
         }
 
         if (gameState == STATE_PLAYING && code == KeyEvent.VK_SPACE) {
-            if (player != null && player.tier >= 3 && player.ultimate != null && player.ultimate.isReady()) {
+            if (player != null && player.tier >= 2 && player.ultimate != null && player.ultimate.isReady()) {
                 player.ultimate.activate(this);
                 addScreenShake(4);
                 System.out.println("[Ultimate] " + player.ultimate.name + " activated!");
@@ -1409,15 +1389,13 @@ public class SurvivalGame extends GameEngine {
     }
 
     private Color tierThemeColor() {
-        if (pendingTier >= 4) return new Color(255, 205, 76);
-        if (pendingTier >= 3) return new Color(193, 116, 255);
-        return new Color(102, 196, 255);
+        if (pendingTier >= 3) return new Color(255, 205, 76);
+        return new Color(193, 116, 255);
     }
 
     private String tierDisplayName() {
-        if (pendingTier >= 4) return "LEGENDARY";
-        if (pendingTier >= 3) return "ELITE";
-        return "ADVANCED";
+        if (pendingTier >= 3) return "LEGENDARY";
+        return "ELITE";
     }
 
     private int statGainPct(double oldMul, double newMul) {
@@ -1492,7 +1470,7 @@ public class SurvivalGame extends GameEngine {
     }
 
     private void renderLevelMilestoneTrack(int x, int y) {
-        int[] marks = new int[] {25, 50, 75};
+        int[] marks = new int[] {25, 50};
         changeColor(new Color(202, 188, 152));
         drawText(x, y, "MILESTONES", "Arial", 11);
         for (int i = 0; i < marks.length; i++) {
@@ -1603,9 +1581,8 @@ public class SurvivalGame extends GameEngine {
         levelMilestoneNoticeTimer = 2.2;
         addScreenShake(4);
         if (player != null) {
-            Color c = (levelMark >= 75) ? new Color(255, 210, 88)
-                : (levelMark >= 50) ? new Color(206, 152, 255)
-                : new Color(120, 210, 255);
+            Color c = (levelMark >= 50) ? new Color(255, 210, 88)
+                : new Color(206, 152, 255);
             for (int i = 0; i < 3; i++) {
                 vfx.spawnDeathBurst(player.x, player.y, c);
             }
@@ -1791,8 +1768,7 @@ public class SurvivalGame extends GameEngine {
         int fullHpBonus = fullHealthBonusEarned ? GameConfig.SCORE_FULL_HP_BONUS : 0;
         int subtotal = totalKillScore + survivalScore + bossBonus + fullHpBonus;
         double milestoneMult;
-        if (highestLevelReached >= 75) milestoneMult = GameConfig.SCORE_MILESTONE_LV75;
-        else if (highestLevelReached >= 50) milestoneMult = GameConfig.SCORE_MILESTONE_LV50;
+        if (highestLevelReached >= 50) milestoneMult = GameConfig.SCORE_MILESTONE_LV50;
         else if (highestLevelReached >= 25) milestoneMult = GameConfig.SCORE_MILESTONE_LV25;
         else milestoneMult = 1.0;
         return (int)Math.round(subtotal * milestoneMult);
@@ -1842,9 +1818,8 @@ public class SurvivalGame extends GameEngine {
         if (player != null) {
             for (int i = 0; i < 30; i++) {
                 vfx.spawnDeathBurst(player.x, player.y,
-                    newTier >= 4 ? new Color(255, 200, 40) :
-                    newTier >= 3 ? new Color(180, 80, 255) :
-                    new Color(80, 180, 255));
+                    newTier >= 3 ? new Color(255, 200, 40) :
+                    new Color(180, 80, 255));
             }
         }
         System.out.println("[Tier] Player reached Tier " + newTier + "!");

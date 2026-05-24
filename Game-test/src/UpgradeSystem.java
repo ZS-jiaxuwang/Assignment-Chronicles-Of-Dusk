@@ -28,7 +28,7 @@ public class UpgradeSystem {
             int oldLevel = level;
             xp -= xpForNextLevel();
             level++;
-            if (level == 25 || level == 50 || level == 75) {
+            if (level == 25 || level == 50) {
                 game.onLevelMilestone(level);
             }
             if (CharacterProgression.justCrossedTier(oldLevel, level)) {

@@ -42,10 +42,9 @@ public final class GameConfig {
 
     public static final int TIER2_LEVEL = 25;
     public static final int TIER3_LEVEL = 50;
-    public static final int TIER4_LEVEL = 75;
     public static final double TIER_UP_INTRO_SECONDS = 2.5;
     public static final double ULTIMATE_COOLDOWN = 30.0;
-    public static final double ULTIMATE_COOLDOWN_TIER4 = 15.0;
+    public static final double ULTIMATE_COOLDOWN_TIER3 = 15.0;
 
     // Score system
     public static final int SCORE_BOSS_KILL = 5000;
@@ -64,9 +63,8 @@ public final class GameConfig {
     public static final double SCORE_RARITY_RARE = 1.5;
     public static final double SCORE_RARITY_EPIC = 2.0;
     public static final double SCORE_RARITY_LEGENDARY = 3.0;
-    public static final double SCORE_MILESTONE_LV25 = 1.5;
-    public static final double SCORE_MILESTONE_LV50 = 2.0;
-    public static final double SCORE_MILESTONE_LV75 = 3.0;
+    public static final double SCORE_MILESTONE_LV25 = 2.0;
+    public static final double SCORE_MILESTONE_LV50 = 3.0;
 
     public static final Color BG_DARK = new Color(12, 16, 24);
     public static final Color WORLD_GROUND = new Color(18, 24, 36);

@@ -199,6 +199,7 @@ public abstract class GameEngine implements KeyListener, MouseListener, MouseMot
             // Determine the time step
             double passedTime = measureTime();
             double dt = passedTime / 1000.;
+            if (dt > 0.05) dt = 0.05;
 
             // Update the Game
             update(dt);
