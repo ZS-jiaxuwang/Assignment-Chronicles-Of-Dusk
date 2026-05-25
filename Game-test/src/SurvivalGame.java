@@ -875,7 +875,7 @@ public class SurvivalGame extends GameEngine {
         double t = introTimer;
 
         // Build static background cache once
-        if (introBgCache == null) {
+        if (introBgCache == null || introBgCache.getWidth() != W || introBgCache.getHeight() != H) {
             java.awt.Graphics2D saved = mGraphics;
             introBgCache = new java.awt.image.BufferedImage(W, H, java.awt.image.BufferedImage.TYPE_INT_RGB);
             mGraphics = introBgCache.createGraphics();
@@ -1296,7 +1296,7 @@ public class SurvivalGame extends GameEngine {
     }
 
     private void drawMenuBackdrop() {
-        if (menuBgCache == null) {
+        if (menuBgCache == null || menuBgCache.getWidth() != width() || menuBgCache.getHeight() != height()) {
             buildMenuBackground();
         }
         mGraphics.drawImage(menuBgCache, 0, 0, null);
