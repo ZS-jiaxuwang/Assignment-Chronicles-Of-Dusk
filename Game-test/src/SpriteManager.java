@@ -54,6 +54,33 @@ public class SpriteManager {
         return AssetLibrary.swordsmanAnimFile(tier, anim);
     }
 
+    // ── Mage ──
+
+    public static void drawMage(int tier, int anim, int dir, double animTimer,
+                                  double cx, double cy) {
+        String file = mageFile(tier, anim);
+        if (file == null || !AssetLoader.hasAsset(file)) {
+            drawFallbackCharacter(cx, cy, 16, new Color(150, 90, 250), dir, anim, animTimer);
+            return;
+        }
+        int cols = totalFrames(file, S_FRAME);
+        double fps = animFps(anim);
+        int col = ((int)(animTimer * fps)) % Math.max(1, cols);
+        int row = Math.min(dir, 3);
+        Image frame = AssetLoader.getFrame(file, col, row, S_FRAME, S_FRAME);
+        if (frame == null) {
+            drawFallbackCharacter(cx, cy, 16, new Color(150, 90, 250), dir, anim, animTimer);
+            return;
+        }
+        double rw = S_FRAME * S_SCALE;
+        double rh = S_FRAME * S_SCALE;
+        engine.drawImage(frame, cx - rw * 0.5, cy - rh * 0.6, rw, rh);
+    }
+
+    private static String mageFile(int tier, int anim) {
+        return AssetLibrary.mageAnimFile(tier, anim);
+    }
+
     // ── Orc ──
 
     public static void drawOrc(int anim, double animTimer,
