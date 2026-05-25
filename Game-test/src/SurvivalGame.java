@@ -25,6 +25,8 @@ public class SurvivalGame extends GameEngine {
     int introPhase;
     double introScrollOffset;
     private java.awt.image.BufferedImage introBgCache;
+    private java.awt.image.BufferedImage menuBgCache;
+    private java.awt.image.BufferedImage groundTile;
     int swapPendingWeaponId;
     WeaponRarity swapPendingRarity;
     double tierUpTimer;
@@ -231,7 +233,6 @@ public class SurvivalGame extends GameEngine {
             if (!pickups.get(i).alive) pickups.remove(i);
         }
     }
-
     @Override
     public void paintComponent() {
         changeBackgroundColor(GameConfig.BG_DARK);
@@ -271,8 +272,24 @@ public class SurvivalGame extends GameEngine {
     private void renderWorld() {
         vfx.beginCamera(this, camera);
 
-        changeColor(GameConfig.WORLD_GROUND);
-        drawSolidRectangle(0, 0, GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT);
+        if (groundTile == null) {
+            buildGroundTile();
+        }
+        int tileSize = 240;
+        int camLeft = Math.max(0, (int)camera.x - tileSize);
+        int camTop = Math.max(0, (int)camera.y - tileSize);
+        int camRight = Math.min(GameConfig.WORLD_WIDTH, (int)camera.x + width() + tileSize);
+        int camBottom = Math.min(GameConfig.WORLD_HEIGHT, (int)camera.y + height() + tileSize);
+        int startTx = (camLeft / tileSize) * tileSize;
+        int startTy = (camTop / tileSize) * tileSize;
+        for (int tx = startTx; tx < camRight; tx += tileSize) {
+            for (int ty = startTy; ty < camBottom; ty += tileSize) {
+                int tw = Math.min(tileSize, GameConfig.WORLD_WIDTH - tx);
+                int th = Math.min(tileSize, GameConfig.WORLD_HEIGHT - ty);
+                drawImage(groundTile, tx, ty, tw, th);
+            }
+        }
+
         changeColor(GameConfig.WORLD_BORDER);
         drawRectangle(0, 0, GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT, 4);
 
@@ -1279,16 +1296,130 @@ public class SurvivalGame extends GameEngine {
     }
 
     private void drawMenuBackdrop() {
-        changeColor(new Color(18, 16, 24));
-        drawSolidRectangle(0, 0, width(), height());
-        changeColor(new Color(28, 24, 36));
-        for (int i = 0; i < width(); i += 34) {
-            drawSolidRectangle(i, 0, 2, height());
+        if (menuBgCache == null) {
+            buildMenuBackground();
         }
+        mGraphics.drawImage(menuBgCache, 0, 0, null);
         changeColor(new Color(34, 28, 24, 140));
         drawSolidRectangle(84, 70, 812, 500);
         changeColor(new Color(100, 86, 63));
         drawRectangle(84, 70, 812, 500, 3);
+    }
+
+    private void buildMenuBackground() {
+        int W = width();
+        int H = height();
+        java.awt.Graphics2D saved = mGraphics;
+        menuBgCache = new java.awt.image.BufferedImage(W, H, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        mGraphics = menuBgCache.createGraphics();
+        mGraphics.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // Night sky gradient - dark blue at top to dusk purple at bottom
+        mGraphics.setPaint(new java.awt.GradientPaint(0, 0, new Color(15, 12, 42), 0, H, new Color(55, 35, 65)));
+        mGraphics.fillRect(0, 0, W, H);
+
+        // Moon
+        changeColor(new Color(235, 228, 200));
+        drawSolidCircle(W - 150, 85, 38);
+        changeColor(new Color(20, 16, 38));
+        drawSolidCircle(W - 138, 78, 33);
+
+        // Stars - twinkling dots across the sky
+        java.util.Random rng = new java.util.Random(42);
+        for (int i = 0; i < 120; i++) {
+            int sx = rng.nextInt(W);
+            int sy = rng.nextInt(H - 250);
+            int brightness = 120 + rng.nextInt(135);
+            int size = rng.nextDouble() < 0.15 ? 2 : 1;
+            changeColor(new Color(brightness, brightness - 10, brightness - 30));
+            drawSolidRectangle(sx, sy, size, size);
+        }
+
+        // Distant mountains - back layer (lighter = farther away, atmospheric perspective)
+        int[] mtnX = new int[]{0, 50, 130, 200, 290, 370, 440, 530, 610, 700, 790, 870, 960};
+        int[] mtnH = new int[]{70, 110, 80, 140, 90, 155, 100, 130, 85, 145, 95, 125, 75};
+        for (int i = 0; i < mtnX.length - 2; i++) {
+            changeColor(new Color(38, 30, 48));
+            int cx = (mtnX[i] + mtnX[i + 1]) / 2;
+            int peakY = H - 95 - mtnH[i];
+            fillTriangle(mtnX[i], H - 80, cx, peakY, mtnX[i + 1], H - 80);
+        }
+
+        // Distant mountains - front layer (darker = closer)
+        int[] mtnX2 = new int[]{0, 80, 170, 260, 350, 430, 520, 600, 690, 780, 870, 960};
+        int[] mtnH2 = new int[]{50, 80, 55, 100, 65, 110, 70, 90, 60, 105, 70, 55};
+        for (int i = 0; i < mtnX2.length - 2; i++) {
+            changeColor(new Color(28, 22, 35));
+            int cx = (mtnX2[i] + mtnX2[i + 1]) / 2;
+            int peakY = H - 88 - mtnH2[i];
+            fillTriangle(mtnX2[i], H - 72, cx, peakY, mtnX2[i + 1], H - 72);
+        }
+
+        // Ground
+        changeColor(new Color(24, 18, 28));
+        mGraphics.fillRect(0, H - 64, W, 64);
+
+        // Distant tower silhouette (left)
+        int tx = 160;
+        int ty = H - 68;
+        changeColor(new Color(22, 18, 30));
+        drawSolidRectangle(tx - 14, ty - 110, 28, 110);
+        drawSolidRectangle(tx - 20, ty - 130, 40, 24);
+        for (int i = 0; i < 3; i++) {
+            drawSolidRectangle(tx - 16 + i * 13, ty - 140, 6, 14);
+        }
+        // Tower lit windows
+        changeColor(new Color(90, 70, 40));
+        drawSolidRectangle(tx - 30, ty - 70, 7, 12);
+        drawSolidRectangle(tx + 24, ty - 70, 7, 12);
+
+        // Distant tower silhouette (right)
+        int tx2 = 790;
+        changeColor(new Color(20, 15, 28));
+        drawSolidRectangle(tx2 - 10, ty - 80, 20, 80);
+        drawSolidRectangle(tx2 - 14, ty - 96, 28, 20);
+        drawSolidRectangle(tx2 - 4, ty - 106, 8, 14);
+
+        mGraphics = saved;
+    }
+
+    private void buildGroundTile() {
+        int S = 240;
+        java.awt.Graphics2D saved = mGraphics;
+        groundTile = new java.awt.image.BufferedImage(S, S, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        mGraphics = groundTile.createGraphics();
+
+        changeColor(new Color(20, 28, 22));
+        drawSolidRectangle(0, 0, S, S);
+
+        java.util.Random rng = new java.util.Random(137);
+        // Darker patches
+        for (int i = 0; i < 30; i++) {
+            int px = rng.nextInt(S);
+            int py = rng.nextInt(S);
+            int pw = 16 + rng.nextInt(40);
+            int ph = 12 + rng.nextInt(30);
+            int shade = 16 + rng.nextInt(10);
+            changeColor(new Color(shade, shade + 6, shade));
+            drawSolidRectangle(px, py, pw, ph);
+        }
+        // Lighter grass speckles
+        for (int i = 0; i < 200; i++) {
+            int px = rng.nextInt(S);
+            int py = rng.nextInt(S);
+            int shade = 30 + rng.nextInt(22);
+            changeColor(new Color(shade, shade + 8, shade - 2));
+            drawSolidRectangle(px, py, 2 + rng.nextInt(4), 2 + rng.nextInt(4));
+        }
+        // Tiny bright dots
+        for (int i = 0; i < 60; i++) {
+            int px = rng.nextInt(S);
+            int py = rng.nextInt(S);
+            changeColor(new Color(52 + rng.nextInt(30), 55 + rng.nextInt(30), 40 + rng.nextInt(20)));
+            drawSolidRectangle(px, py, 1, 1);
+        }
+
+        mGraphics = saved;
     }
 
     private void drawMenuButton(int x, int y, int w, int h, String text, boolean hover, Color accent) {
