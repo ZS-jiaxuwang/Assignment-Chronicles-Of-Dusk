@@ -67,6 +67,20 @@ public final class AssetLibrary {
         }
     }
 
+    public static String mageAnimFile(int tier, int anim) {
+        String prefix;
+        if (tier >= 3) prefix = "char_mage_lvl3";
+        else if (tier >= 2) prefix = "char_mage_lvl2";
+        else prefix = "char_mage_lvl1";
+        switch (anim) {
+            case SpriteManager.ANIM_WALK: return prefix + "_run.png";
+            case SpriteManager.ANIM_ATTACK: return prefix + "_attack.png";
+            case SpriteManager.ANIM_HURT: return prefix + "_hurt.png";
+            case SpriteManager.ANIM_DEATH: return prefix + "_death.png";
+            default: return prefix + "_idle.png";
+        }
+    }
+
     public static String treeSpriteBySeed(int seed) {
         return TREE_SPRITES[Math.floorMod(seed, TREE_SPRITES.length)];
     }

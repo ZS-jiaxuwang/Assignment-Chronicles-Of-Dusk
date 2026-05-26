@@ -149,6 +149,8 @@ public class Player extends Entity {
 
         if (character.getId() == CharacterDef.WARRIOR) {
             SpriteManager.drawSwordsman(tier, anim, dir, animTimer, x, y);
+        } else if (character.getId() == CharacterDef.MAGE) {
+            SpriteManager.drawMage(tier, anim, dir, animTimer, x, y);
         } else {
             Color c = (hitFlashTimer > 0 && hitFlashTimer % 2 == 0) ? Color.WHITE : baseColor;
             SpriteManager.drawCharacter(getAssetKey(), anim, dir, animTimer, x, y, radius, c);
