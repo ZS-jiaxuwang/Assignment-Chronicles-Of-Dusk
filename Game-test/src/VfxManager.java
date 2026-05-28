@@ -26,7 +26,12 @@ public class VfxManager {
     }
 
     public void spawnDamageText(double x, double y, double damage) {
-        Color c = damage > 20 ? new Color(255, 180, 80) : Color.WHITE;
+        spawnDamageText(x, y, damage, false);
+    }
+
+    public void spawnDamageText(double x, double y, double damage, boolean isCrit) {
+        Color c = isCrit ? new Color(255, 220, 40)
+            : (damage > 20 ? new Color(255, 180, 80) : Color.WHITE);
         texts.add(new FloatingText(x, y, Integer.toString((int)Math.round(damage)), c));
     }
 

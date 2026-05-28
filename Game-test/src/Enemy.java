@@ -26,6 +26,18 @@ public class Enemy extends Entity {
     @Override
     public void render(GameEngine g) {
         if (!alive) return;
+        if (dying) {
+            double t = deathTimer / 0.3;
+            double fadeAlpha = Math.max(0, t);
+            double expand = 1.0 + (1.0 - t) * 0.6;
+            Color bodyColor = new Color(baseColor.getRed(), baseColor.getGreen(), baseColor.getBlue(), (int)(140 * fadeAlpha));
+            g.changeColor(bodyColor);
+            g.drawSolidCircle(x, y, radius * expand);
+            Color glowColor = new Color(255, 255, 255, (int)(60 * fadeAlpha));
+            g.changeColor(glowColor);
+            g.drawSolidCircle(x, y, radius * expand * 0.6);
+            return;
+        }
         int anim;
         Player p = game.player;
         boolean nearPlayer;
@@ -80,10 +92,14 @@ public class Enemy extends Entity {
     private double age;
     private double bossProjectileTimer;
     private double bossSummonTimer;
+    private double bossChargeTimer;
+    private double bossDashTimer;
+    private double bossBurstTimer;
+    private double bossShockwaveTimer;
     private double rangedAttackTimer;
 
     public Enemy(SurvivalGame game, int type, double x, double y) {
-        super(x, y, radiusByType(type), hpByType(type) * (1.0 + game.getRunTimeSeconds() * 0.012), colorByType(type));
+        super(x, y, radiusByType(type), hpByType(type) * (0.55 + game.getRunTimeSeconds() * 0.016), colorByType(type));
         this.game = game;
         this.type = type;
         double t = game.getRunTimeSeconds();
@@ -94,6 +110,7 @@ public class Enemy extends Entity {
 
     @Override
     public void onUpdate(double dt) {
+        if (dying) return;
         age += dt;
         Player p = game.player;
         if (p == null || !p.alive) {
@@ -182,20 +199,59 @@ public class Enemy extends Entity {
         }
 
         if (type == BOSS) {
-            if (health <= maxHealth * 0.5) {
-                speed *= 1.5;
-                bossProjectileTimer += dt;
-                bossSummonTimer += dt;
-                if (bossProjectileTimer >= 5.0) {
-                    bossProjectileTimer = 0.0;
-                    game.spawnBossRadial(this);
+            int phase = getBossPhase();
+            double speedMult = (phase == 3) ? 1.8 : (phase == 2) ? 1.4 : 1.0;
+            speed *= speedMult;
+
+            bossProjectileTimer += dt;
+            double radialInterval = (phase == 3) ? 2.5 : (phase == 2) ? 3.0 : 3.5;
+            int radialCount = (phase == 3) ? 20 : (phase == 2) ? 14 : 10;
+            if (bossProjectileTimer >= radialInterval) {
+                bossProjectileTimer = 0.0;
+                game.spawnBossRadial(this, radialCount);
+            }
+
+            bossSummonTimer += dt;
+            double summonInterval = (phase == 3) ? 4.0 : (phase == 2) ? 5.0 : 6.0;
+            if (bossSummonTimer >= summonInterval) {
+                bossSummonTimer = 0.0;
+                int summonType = (phase == 3) ? Enemy.SKELETON : (phase == 2) ? Enemy.ORC : Enemy.GOBLIN;
+                int summonCount = (phase == 3) ? 5 : 4;
+                for (int i = 0; i < summonCount; i++) {
+                    game.spawnEnemyNear(this.x, this.y, summonType, 140);
                 }
-                if (bossSummonTimer >= 8.0) {
-                    bossSummonTimer = 0.0;
-                    for (int i = 0; i < 3; i++) {
-                        game.spawnEnemyNear(this.x, this.y, Enemy.SLIME, 120);
-                    }
+            }
+
+            bossChargeTimer += dt;
+            double chargeInterval = (phase == 3) ? 4.0 : (phase == 2) ? 5.0 : 99.0;
+            if (phase >= 2 && bossChargeTimer >= chargeInterval) {
+                bossChargeTimer = 0.0;
+                performChargeDash();
+                vx = nx * speed;
+                vy = ny * speed;
+                return;
+            }
+
+            if (bossDashTimer > 0) {
+                bossDashTimer -= dt;
+                if (bossDashTimer <= 0) {
+                    bossDashTimer = 0;
+                    vx = 0;
+                    vy = 0;
                 }
+                return;
+            }
+
+            bossBurstTimer += dt;
+            if (phase >= 3 && bossBurstTimer >= 3.0) {
+                bossBurstTimer = 0.0;
+                performBurstShot();
+            }
+
+            bossShockwaveTimer += dt;
+            if (phase >= 3 && bossShockwaveTimer >= 5.5) {
+                bossShockwaveTimer = 0.0;
+                game.spawnBossShockwave(this);
             }
         }
 
@@ -344,6 +400,38 @@ public class Enemy extends Entity {
         }
     }
 
+    private int getBossPhase() {
+        if (health <= maxHealth * 0.33) return 3;
+        if (health <= maxHealth * 0.66) return 2;
+        return 1;
+    }
+
+    private void performChargeDash() {
+        Player p = game.player;
+        if (p == null || !p.alive) return;
+        double dx = p.x - x;
+        double dy = p.y - y;
+        double dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 0.001) dist = 0.001;
+        vx = (dx / dist) * baseSpeed * 4.5;
+        vy = (dy / dist) * baseSpeed * 4.5;
+        bossDashTimer = 0.5;
+    }
+
+    private void performBurstShot() {
+        Player p = game.player;
+        if (p == null || !p.alive) return;
+        double baseAngle = Math.atan2(p.y - y, p.x - x);
+        for (int i = -4; i <= 4; i++) {
+            double angle = baseAngle + i * Math.toRadians(12);
+            double sx = x + Math.cos(angle) * (radius + 10);
+            double sy = y + Math.sin(angle) * (radius + 10);
+            Projectile proj = new Projectile(game, sx, sy, 7, 260, angle, 26, 2.8, 0, false,
+                new Color(255, 50, 50), Projectile.TYPE_ARROW);
+            game.addProjectile(proj);
+        }
+    }
+
     private void fireAtPlayer(Player p, double projSpeed, double damage, double lifetime, double radius, Color color) {
         double dx = p.x - x;
         double dy = p.y - y;
@@ -381,7 +469,7 @@ public class Enemy extends Entity {
             case SKELETON: return 280;
             case GIANT: return 1400;
             case GHOST: return 35;
-            case BOSS: return 12000;
+            case BOSS: return 38000;
             case ORC: return 500;
             case GOBLIN: return 120;
             case MUSHROOM: return 750;
@@ -396,7 +484,7 @@ public class Enemy extends Entity {
             case SKELETON: return 70;
             case GIANT: return 40;
             case GHOST: return 120;
-            case BOSS: return 45;
+            case BOSS: return 55;
             case ORC: return 55;
             case GOBLIN: return 85;
             case MUSHROOM: return 40;
@@ -411,7 +499,7 @@ public class Enemy extends Entity {
             case SKELETON: return 15;
             case GIANT: return 30;
             case GHOST: return 10;
-            case BOSS: return 40;
+            case BOSS: return 60;
             case ORC: return 20;
             case GOBLIN: return 12;
             case MUSHROOM: return 20;

@@ -4,21 +4,21 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 public class SurvivalGame extends GameEngine {
-    private static final String FONT_TITLE = "Serif";  //标题衬线字体
-    private static final String FONT_BODY = "Dialog";  //正文无衬线字体
-    private static final String FONT_NUM = "Georgia";  //数字字体
-    public static final int STATE_MENU = 0;            //menu界面
-    public static final int STATE_CHAR_SELECT = 1;     //选择角色界面
-    public static final int STATE_PLAYING = 2;         //战斗界面
-    public static final int STATE_UPGRADE_PAUSE = 3;   //升级暂停--画面冻结弹出三张卡片
-    public static final int STATE_BOSS_INTRO = 4;      //Boss登场警告
-    public static final int STATE_VICTORY = 5;         //胜利结算
-    public static final int STATE_DEFEAT = 6;          //失败
-    public static final int STATE_WEAPON_SWAP = 7;     //武器槽满时替换选择界面
-    public static final int STATE_TIER_UP = 8;         //角色晋升
-    public static final int STATE_INTRO = 9;           //开场动画
-    public static final int STATE_PAUSED = 10;         //手动暂停P
-    public static final int STATE_HELP = 11;           //帮助界面
+    private static final String FONT_TITLE = "Serif";
+    private static final String FONT_BODY = "Dialog";
+    private static final String FONT_NUM = "Georgia";
+    public static final int STATE_MENU = 0;
+    public static final int STATE_CHAR_SELECT = 1;
+    public static final int STATE_PLAYING = 2;
+    public static final int STATE_UPGRADE_PAUSE = 3;
+    public static final int STATE_BOSS_INTRO = 4;
+    public static final int STATE_VICTORY = 5;
+    public static final int STATE_DEFEAT = 6;
+    public static final int STATE_WEAPON_SWAP = 7;
+    public static final int STATE_TIER_UP = 8;
+    public static final int STATE_INTRO = 9;
+    public static final int STATE_PAUSED = 10;
+    public static final int STATE_HELP = 11;
 
     int gameState = STATE_MENU;
     double introTimer;
@@ -67,12 +67,13 @@ public class SurvivalGame extends GameEngine {
 
 
 
-    //计分系统
+
     private int killCount;
     private int totalKillScore;
     private boolean bossKilled;
     private boolean fullHealthBonusEarned;
     private int highestLevelReached;
+    private double hitstopTimer;
 
     public static void main(String[] args) {
         createGame(new SurvivalGame(), 60);
@@ -88,6 +89,9 @@ public class SurvivalGame extends GameEngine {
         characters = CharacterDef.all();
 
         SpriteManager.init(this);
+
+
+
         vfx = new VfxManager(this);
         camera = new Camera(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT,
             GameConfig.WINDOW_WIDTH, GameConfig.WINDOW_HEIGHT);
@@ -104,7 +108,6 @@ public class SurvivalGame extends GameEngine {
 
     @Override
     public void update(double dt) {
-        // ── Audio: state transitions ──
         if (gameState != prevGameState) {
             handleAudioStateChange(prevGameState, gameState);
             if (gameState == STATE_INTRO) {
@@ -115,7 +118,7 @@ public class SurvivalGame extends GameEngine {
             }
             prevGameState = gameState;
         }
-        // ── Audio: boss detection during combat ──
+
         if (gameState == STATE_PLAYING) {
             boolean bossNow = findBoss() != null;
             if (bossNow && !bossWasActive) {
@@ -139,6 +142,7 @@ public class SurvivalGame extends GameEngine {
             updatePlaying(dt);
         } else if (gameState == STATE_UPGRADE_PAUSE) {
             vfx.update(dt);
+
             updateUpgradeHover();
         } else if (gameState == STATE_BOSS_INTRO) {
             bossIntroTimer -= dt;
@@ -177,7 +181,9 @@ public class SurvivalGame extends GameEngine {
         if (newState == STATE_MENU || newState == STATE_CHAR_SELECT) {
             audio.playMenuBgm();
         } else if (newState == STATE_PLAYING) {
-            if (prevState != STATE_BOSS_INTRO) {
+            if (findBoss() != null) {
+                audio.playBossBgm();
+            } else {
                 audio.playBattleBgm();
             }
         } else if (newState == STATE_BOSS_INTRO) {
@@ -196,29 +202,45 @@ public class SurvivalGame extends GameEngine {
             return;
         }
 
-        runTimeSeconds += dt;
-        player.update(dt);
+        double gameDt = dt;
+        if (hitstopTimer > 0) {
+            hitstopTimer -= dt;
+            if (hitstopTimer <= 0) {
+                hitstopTimer = 0;
+            } else {
+                gameDt *= 0.05;
+            }
+        }
+
+        runTimeSeconds += gameDt;
+        player.update(gameDt);
         updatePlayerAuraVfx(dt);
         player.clampToWorld();
-        camera.follow(player.x, player.y, dt);
+        camera.follow(player.x, player.y, gameDt);
 
         if (upgradeSystem.level() > highestLevelReached) {
             highestLevelReached = upgradeSystem.level();
         }
 
-        spawner.update(dt * combatPaceMultiplier());
-        weaponManager.update(dt);
+        spawner.update(gameDt * combatPaceMultiplier());
+        weaponManager.update(gameDt);
 
-        for (Enemy e : new ArrayList<>(enemies)) e.update(dt);
-        for (Projectile p : projectiles) p.update(dt);
-        for (Pickup p : pickups) p.update(dt);
+        for (Enemy e : new ArrayList<>(enemies)) e.update(gameDt);
+        for (Projectile p : projectiles) p.update(gameDt);
+        for (Pickup p : pickups) p.update(gameDt);
 
-        collisionSystem.update(dt);
+        collisionSystem.update(gameDt);
         cleanupDead();
         vfx.update(dt);
 
         if (!player.alive) {
             gameState = STATE_DEFEAT;
+        }
+    }
+
+    public void triggerHitstop(double duration) {
+        if (hitstopTimer <= 0.01) {
+            hitstopTimer = duration;
         }
     }
 
@@ -605,6 +627,7 @@ public class SurvivalGame extends GameEngine {
 
     private void renderWeaponSwapOverlay() {
         changeColor(new Color(0, 0, 0, 170));
+
         drawSolidRectangle(100, 140, 760, 440);
         changeColor(Color.WHITE);
         drawBoldText(280, 200, "WEAPON CHEST FOUND!", "Arial", 32);
@@ -617,8 +640,14 @@ public class SurvivalGame extends GameEngine {
 
         ArrayList<WeaponInstance> list = weaponManager.list();
         for (int i = 0; i < list.size(); i++) {
+
+
+
+
             int x = 130 + i * 120;
             int y = 310;
+
+
             boolean hover = mouseX >= x && mouseX <= x + 100 && mouseY >= y && mouseY <= y + 120;
             changeColor(hover ? new Color(85, 105, 140) : new Color(45, 60, 90));
             drawSolidRectangle(x, y, 100, 120);
@@ -818,7 +847,7 @@ public class SurvivalGame extends GameEngine {
 
         // Level milestone
         double milestoneMult = 1.0;
-        if (highestLevelReached >= 50) milestoneMult = GameConfig.SCORE_MILESTONE_LV50;
+        if (highestLevelReached >= 40) milestoneMult = GameConfig.SCORE_MILESTONE_LV40;
         else if (highestLevelReached >= 25) milestoneMult = GameConfig.SCORE_MILESTONE_LV25;
         if (milestoneMult > 1.0) {
             changeColor(new Color(180, 160, 240));
@@ -1601,7 +1630,7 @@ public class SurvivalGame extends GameEngine {
     }
 
     private void renderLevelMilestoneTrack(int x, int y) {
-        int[] marks = new int[] {25, 50};
+        int[] marks = new int[] {25, 40};
         changeColor(new Color(202, 188, 152));
         drawText(x, y, "MILESTONES", "Arial", 11);
         for (int i = 0; i < marks.length; i++) {
@@ -1712,7 +1741,7 @@ public class SurvivalGame extends GameEngine {
         levelMilestoneNoticeTimer = 2.2;
         addScreenShake(4);
         if (player != null) {
-            Color c = (levelMark >= 50) ? new Color(255, 210, 88)
+            Color c = (levelMark >= 40) ? new Color(255, 210, 88)
                 : new Color(206, 152, 255);
             for (int i = 0; i < 3; i++) {
                 vfx.spawnDeathBurst(player.x, player.y, c);
@@ -1899,7 +1928,7 @@ public class SurvivalGame extends GameEngine {
         int fullHpBonus = fullHealthBonusEarned ? GameConfig.SCORE_FULL_HP_BONUS : 0;
         int subtotal = totalKillScore + survivalScore + bossBonus + fullHpBonus;
         double milestoneMult;
-        if (highestLevelReached >= 50) milestoneMult = GameConfig.SCORE_MILESTONE_LV50;
+        if (highestLevelReached >= 40) milestoneMult = GameConfig.SCORE_MILESTONE_LV40;
         else if (highestLevelReached >= 25) milestoneMult = GameConfig.SCORE_MILESTONE_LV25;
         else milestoneMult = 1.0;
         return (int)Math.round(subtotal * milestoneMult);
@@ -1915,10 +1944,23 @@ public class SurvivalGame extends GameEngine {
     }
 
     public void spawnBossRadial(Enemy boss) {
+        spawnBossRadial(boss, 8);
+    }
+
+    public void spawnBossRadial(Enemy boss, int count) {
+        addScreenShake(10);
+        for (int i = 0; i < count; i++) {
+            double angle = Math.toRadians(i * (360.0 / count));
+            Projectile p = new Projectile(this, boss.x, boss.y, 7, 210, angle, 24, 3.8, 0, false, new Color(255, 100, 100), Projectile.TYPE_ARROW);
+            addProjectile(p);
+        }
+    }
+
+    public void spawnBossShockwave(Enemy boss) {
         addScreenShake(8);
-        for (int i = 0; i < 8; i++) {
-            double angle = Math.toRadians(i * 45);
-            Projectile p = new Projectile(this, boss.x, boss.y, 6, 180, angle, 20, 3.5, 0, false, new Color(255, 110, 110), Projectile.TYPE_ARROW);
+        for (int i = 0; i < 24; i++) {
+            double angle = Math.toRadians(i * 15);
+            Projectile p = new Projectile(this, boss.x, boss.y, 10, 180, angle, 22, 4.5, 0, false, new Color(255, 50, 50), Projectile.TYPE_ARROW);
             addProjectile(p);
         }
     }

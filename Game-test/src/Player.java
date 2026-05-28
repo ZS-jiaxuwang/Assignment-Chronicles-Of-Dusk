@@ -10,6 +10,9 @@ public class Player extends Entity {
     public double pickupRangeMultiplier = 1.0;
     public double damageMultiplier = 1.0;
     public double cooldownMultiplier = 1.0;
+    public double critChance = 0.0;
+    public double critDamage = 1.5;
+    public double lifeSteal = 0.0;
     double animTimer;
 
     public int tier = 1;
@@ -58,15 +61,6 @@ public class Player extends Entity {
 
         if (attackAnimTimer > 0) attackAnimTimer -= dt;
         if (hurtAnimTimer > 0) hurtAnimTimer -= dt;
-        if (dying) {
-            deathTimer -= dt;
-            vx = 0;
-            vy = 0;
-            if (deathTimer <= 0) {
-                alive = false;
-            }
-            return;
-        }
         ultimate.update(dt);
         if (ultimate.active) {
             ultimate.onActiveUpdate(game, dt);
@@ -102,10 +96,8 @@ public class Player extends Entity {
             return;
         }
         super.takeDamage(amount, source);
-        if (!alive) {
-            dying = true;
+        if (dying) {
             deathTimer = 0.8;
-            alive = true; // keep alive during death anim
             return;
         }
         hurtAnimTimer = 0.35;

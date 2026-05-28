@@ -23,10 +23,10 @@ public final class GameConfig {
     public static final double XP_LEVEL_SCALAR = 1.5;
     public static final double XP_QUADRATIC_FACTOR = 0.08;
 
-    public static final int MAX_ENEMIES_START = 40;
-    public static final int MAX_ENEMIES_CAP = 180;
-    public static final double MAX_ENEMIES_GROWTH_INTERVAL = 45.0;
-    public static final int MAX_ENEMIES_PER_GROWTH = 8;
+    public static final int MAX_ENEMIES_START = 55;
+    public static final int MAX_ENEMIES_CAP = 300;
+    public static final double MAX_ENEMIES_GROWTH_INTERVAL = 25.0;
+    public static final int MAX_ENEMIES_PER_GROWTH = 14;
     public static final int MAX_PROJECTILES = 320;
     public static final int MAX_PICKUPS = 180;
 
@@ -41,7 +41,7 @@ public final class GameConfig {
     public static final int MAX_WEAPON_SLOTS = 6;
 
     public static final int TIER2_LEVEL = 25;
-    public static final int TIER3_LEVEL = 50;
+    public static final int TIER3_LEVEL = 40;
     public static final double TIER_UP_INTRO_SECONDS = 2.5;
     public static final double ULTIMATE_COOLDOWN = 30.0;
     public static final double ULTIMATE_COOLDOWN_TIER3 = 15.0;
@@ -64,7 +64,7 @@ public final class GameConfig {
     public static final double SCORE_RARITY_EPIC = 2.0;
     public static final double SCORE_RARITY_LEGENDARY = 3.0;
     public static final double SCORE_MILESTONE_LV25 = 2.0;
-    public static final double SCORE_MILESTONE_LV50 = 3.0;
+    public static final double SCORE_MILESTONE_LV40 = 3.0;
 
     public static final Color BG_DARK = new Color(12, 16, 24);
     public static final Color WORLD_GROUND = new Color(18, 24, 36);

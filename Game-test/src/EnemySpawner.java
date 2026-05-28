@@ -32,14 +32,15 @@ public class EnemySpawner {
             return;
         }
 
-        if (trickleTimer >= 2.5) {
+        double trickleInterval = Math.max(0.45, 2.0 - gameTimer * 0.005);
+        if (trickleTimer >= trickleInterval) {
             trickleTimer = 0;
             spawnEnemyByTime();
         }
 
-        if (waveTimer >= 50.0) {
+        if (waveTimer >= 40.0) {
             waveTimer = 0;
-            int count = 5 + (int)(gameTimer / 60.0);
+            int count = 10 + (int)(gameTimer / 25.0);
             for (int i = 0; i < count; i++) {
                 spawnEnemyByTime();
             }

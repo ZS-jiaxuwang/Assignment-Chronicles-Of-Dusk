@@ -11,6 +11,8 @@ public abstract class Entity {
     double maxHealth;
     double health;
     boolean alive = true;
+    boolean dying = false;
+    double deathTimer = 0;
     int hitFlashTimer;
     Color baseColor;
 
@@ -26,6 +28,14 @@ public abstract class Entity {
     }
 
     public final void update(double dt) {
+        if (dying) {
+            deathTimer -= dt;
+            if (deathTimer <= 0) {
+                alive = false;
+                dying = false;
+            }
+            return;
+        }
         onUpdate(dt);
         x += vx * dt;
         y += vy * dt;
@@ -49,14 +59,15 @@ public abstract class Entity {
     }
 
     public void takeDamage(double amount, Entity source) {
-        if (!alive || amount <= 0) {
+        if (!alive || dying || amount <= 0) {
             return;
         }
         health -= amount;
         hitFlashTimer = 6;
         if (health <= 0) {
             health = 0;
-            alive = false;
+            dying = true;
+            deathTimer = 0.3;
             onDeath(source);
         }
     }

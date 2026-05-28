@@ -20,7 +20,7 @@ public class CollisionSystem {
         pickupGrid.clear();
 
         for (Enemy e : game.enemies) {
-            if (e.alive) enemyGrid.insert(e);
+            if (e.alive && !e.dying) enemyGrid.insert(e);
         }
         for (Pickup p : game.pickups) {
             if (p.alive) pickupGrid.insert(p);
@@ -39,7 +39,7 @@ public class CollisionSystem {
         ArrayList<Entity> nearby = enemyGrid.getNearby(p);
         for (Entity entity : nearby) {
             Enemy e = (Enemy)entity;
-            if (!e.alive) continue;
+            if (!e.alive || e.dying) continue;
             double rr = p.radius + e.radius;
             double dx = p.x - e.x;
             double dy = p.y - e.y;
@@ -58,7 +58,7 @@ public class CollisionSystem {
             ArrayList<Entity> nearby = enemyGrid.getNearby(proj);
             for (Entity entity : nearby) {
                 Enemy e = (Enemy)entity;
-                if (!e.alive) continue;
+                if (!e.alive || e.dying) continue;
 
                 double rr = proj.radius + e.radius;
                 double dx = proj.x - e.x;
@@ -66,9 +66,25 @@ public class CollisionSystem {
                 if (dx * dx + dy * dy <= rr * rr) {
                     if (!proj.canHit(e)) continue;
                     double damage = proj.damage * game.player.damageMultiplier;
+                    boolean isCrit = game.rand(1.0) < game.player.critChance;
+                    if (isCrit) {
+                        damage *= game.player.critDamage;
+                    }
                     e.takeDamage(damage, proj);
-                    game.vfx.spawnDamageText(e.x, e.y - e.radius, damage);
+
+                    if (damage > 0 && game.player.lifeSteal > 0 && game.player.alive) {
+                        double heal = damage * game.player.lifeSteal;
+                        game.player.health = Math.min(game.player.maxHealth, game.player.health + heal);
+                    }
+
+                    game.vfx.spawnDamageText(e.x, e.y - e.radius, damage, isCrit);
                     proj.markHit(e);
+
+                    double knockback = 5.0;
+                    e.x += Math.cos(proj.angleRad) * knockback;
+                    e.y += Math.sin(proj.angleRad) * knockback;
+                    game.triggerHitstop(isCrit ? 0.05 : 0.03);
+
                     if (proj.pierces > 0) {
                         proj.pierces--;
                     } else {
@@ -134,7 +150,7 @@ public class CollisionSystem {
             return;
         }
         for (Enemy e : game.enemies) {
-            if (!e.alive) continue;
+            if (!e.alive || e.dying) continue;
             ArrayList<Obstacle> nearby = game.gameMap.getNearby(e.x, e.y, 180);
             for (Obstacle ob : nearby) {
                 if (!ob.blocksEnemies()) continue;

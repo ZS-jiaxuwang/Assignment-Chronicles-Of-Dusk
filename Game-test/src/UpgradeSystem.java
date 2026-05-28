@@ -28,7 +28,7 @@ public class UpgradeSystem {
             int oldLevel = level;
             xp -= xpForNextLevel();
             level++;
-            if (level == 25 || level == 50) {
+            if (level == GameConfig.TIER2_LEVEL || level == GameConfig.TIER3_LEVEL) {
                 game.onLevelMilestone(level);
             }
             if (CharacterProgression.justCrossedTier(oldLevel, level)) {
@@ -96,8 +96,15 @@ public class UpgradeSystem {
             }
         }
 
-        int stat = game.rand(4);
-        if (stat == 0) {
+        return makeStatUpgrade();
+    }
+
+    private UpgradeDef makeStatUpgrade() {
+        int totalWeight = 15 + 25 + 25 + 10 + 25 + 10; // 110
+        int roll = game.rand(totalWeight);
+
+        // Swift Boots: weight 15
+        if (roll < 15) {
             return new UpgradeDef("Swift Boots", "Move speed +10%",
                 new UpgradeDef.UpgradeAction() {
                     @Override
@@ -105,7 +112,11 @@ public class UpgradeSystem {
                         g.playerBoostSpeed(1.10);
                     }
                 });
-        } else if (stat == 1) {
+        }
+        roll -= 15;
+
+        // Power Core: weight 25
+        if (roll < 25) {
             return new UpgradeDef("Power Core", "Damage multiplier +15%",
                 new UpgradeDef.UpgradeAction() {
                     @Override
@@ -113,7 +124,11 @@ public class UpgradeSystem {
                         g.player.damageMultiplier *= 1.15;
                     }
                 });
-        } else if (stat == 2) {
+        }
+        roll -= 25;
+
+        // Magnet: weight 25
+        if (roll < 25) {
             return new UpgradeDef("Magnet", "Pickup range +20%",
                 new UpgradeDef.UpgradeAction() {
                     @Override
@@ -121,7 +136,11 @@ public class UpgradeSystem {
                         g.player.pickupRangeMultiplier *= 1.2;
                     }
                 });
-        } else {
+        }
+        roll -= 25;
+
+        // Healing Light: weight 10
+        if (roll < 10) {
             return new UpgradeDef("Healing Light", "Restore 30% of max HP",
                 new UpgradeDef.UpgradeAction() {
                     @Override
@@ -131,6 +150,27 @@ public class UpgradeSystem {
                     }
                 });
         }
+        roll -= 10;
+
+        // Critical Eye: weight 25
+        if (roll < 25) {
+            return new UpgradeDef("Critical Eye", "Crit chance +8%",
+                new UpgradeDef.UpgradeAction() {
+                    @Override
+                    public void apply(SurvivalGame g) {
+                        g.player.critChance += 0.08;
+                    }
+                });
+        }
+
+        // Life Steal: weight 10
+        return new UpgradeDef("Life Steal", "Life steal +3%",
+            new UpgradeDef.UpgradeAction() {
+                @Override
+                public void apply(SurvivalGame g) {
+                    g.player.lifeSteal += 0.03;
+                }
+            });
     }
 
     public void choose(int index) {
