@@ -1,229 +1,229 @@
 # Chronicles of Dusk
 
-> **A Pixel Medieval Survival Chronicle** — 像素中世纪生存编年史
+> **A Pixel Medieval Survival Chronicle**
 
-俯视角像素风中世纪生存游戏。选择你的英雄，在潮水般的敌人中存活，不断变强，击败深渊领主。
+A top-down pixel-art medieval survival game. Choose your hero, survive waves of enemies, grow stronger, and defeat the Abyssal Lord.
 
-| 分辨率 | 帧率 | 世界地图 | 引擎 |
+| Resolution | Frame Rate | World Map | Engine |
 |:------:|:----:|:--------:|:----:|
-| 960×720 | 60 FPS | 3600×2400 | 自研 GameEngine（纯 `java.awt`） |
+| 960×720 | 60 FPS | 3600×2400 | Custom GameEngine (pure `java.awt`) |
 
-**胜利条件**：约 5 分钟后击败 Boss　｜　**失败条件**：生命值归零
-
----
-
-## 目录
-
-- [运行方式](#运行方式)
-- [职业](#职业)
-- [武器系统](#武器系统)
-- [升级与进阶](#升级与进阶)
-- [敌人与 Boss](#敌人与-boss)
-- [操作](#操作)
-- [计分](#计分)
-- [游戏设置](#游戏设置)
-- [项目结构](#项目结构)
+**Win Condition**: Defeat the Boss after ~5 minutes　|　**Lose Condition**: HP reaches zero
 
 ---
 
-## 运行方式
+## Table of Contents
+
+- [How to Run](#how-to-run)
+- [Classes](#classes)
+- [Weapon System](#weapon-system)
+- [Upgrades & Progression](#upgrades--progression)
+- [Enemies & Boss](#enemies--boss)
+- [Controls](#controls)
+- [Scoring](#scoring)
+- [Game Settings](#game-settings)
+- [Project Structure](#project-structure)
+
+---
+
+## How to Run
 
 ```bash
-# 编译
+# Compile
 javac -encoding UTF-8 -d out Game-test/src/*.java
 
-# 运行
+# Run
 java -cp out SurvivalGame
 ```
 
-| 项目 | 说明 |
+| Item | Description |
 |------|------|
-| 主类 | `SurvivalGame` |
+| Main Class | `SurvivalGame` |
 | JDK | Java 8+ |
-| 依赖 | 无外部依赖 |
+| Dependencies | No external dependencies |
 
-> 音频文件位于 `Game-test/audio/`，运行前请确保该目录存在。
+> Audio files are located in `Game-test/audio/`. Ensure this directory exists before running.
 
 ---
 
-## 职业
+## Classes
 
-| 属性 | 战士 Warrior | 法师 Mage |
+| Attribute | Warrior | Mage |
 |------|:------------:|:---------:|
-| 称号 | Crimson Vanguard | Arcane Scholar |
+| Title | Crimson Vanguard | Arcane Scholar |
 | HP | ×1.25 | ×0.95 |
-| 速度 | ×0.95 | ×1.0 |
-| 伤害 | ×1.05 | ×1.2 |
-| 初始武器 | 长剑 Sword | 火焰杖 Fire Staff |
-| 终极技能 | 旋风斩 Whirlwind | 雷暴 Thunderstorm |
-| 风格 | 近战肉盾，持续作战 | 远程爆发，走位生存 |
+| Speed | ×0.95 | ×1.0 |
+| Damage | ×1.05 | ×1.2 |
+| Starting Weapon | Sword | Fire Staff |
+| Ultimate Skill | Whirlwind | Thunderstorm |
+| Playstyle | Melee tank, sustained combat | Ranged burst, positioning & survival |
 
-- **T2（Lv.25）** 解锁终极技能，冷却 30 秒
-- **T3（Lv.40）** 终极技能冷却缩短至 15 秒
+- **T2 (Lv.25)** — Unlock Ultimate Skill, 30s cooldown
+- **T3 (Lv.40)** — Ultimate Skill cooldown reduced to 15s
 
 ---
 
-## 武器系统
+## Weapon System
 
-| 武器 | 冷却 | 伤害 | 攻击模式 |
+| Weapon | Cooldown | Damage | Attack Pattern |
 |------|:----:|:----:|----------|
-| Sword 长剑 | 1.5s | 18 | 前方扇形 |
-| Fire Staff 火焰杖 | 1.0s | 10 | 追踪最近敌人 |
-| Arcane Circle 奥术法阵 | 30.0s | 80 | 自身周围 AoE |
-| Boomerang 回旋镖 | 1.8s | 4 | 随机弹射 |
-| Throwing Dagger 飞刀 | 0.35s | 7 | 追踪最近敌人 |
+| Sword | 1.5s | 18 | Frontal arc |
+| Fire Staff | 1.0s | 10 | Tracks nearest enemy |
+| Arcane Circle | 30.0s | 80 | AoE around self |
+| Boomerang | 1.8s | 4 | Random ricochet |
+| Throwing Dagger | 0.35s | 7 | Tracks nearest enemy |
 
-**机制摘要**
+**Key Mechanics**
 
-- 最多携带 **6** 把武器；击杀敌人有概率掉落武器宝箱
-- 稀有度：Common / Rare / Epic / Legendary（伤害倍率递增，高稀有额外等级）
-- 最高 **5** 级，升级减冷却、加伤害、加弹数
+- Carry up to **6** weapons; killing enemies has a chance to drop weapon crates
+- Rarity: Common / Rare / Epic / Legendary (damage multiplier increases; higher rarities grant bonus levels)
+- Max level **5**; leveling up reduces cooldown, increases damage and projectile count
 
 ---
 
-## 升级与进阶
+## Upgrades & Progression
 
-### 位阶系统（Tier）
+### Tier System
 
-| 位阶 | 解锁等级 | HP | 伤害 | 速度 | 冷却 | 终极技能 |
+| Tier | Unlock Level | HP | Damage | Speed | Cooldown | Ultimate |
 |:----:|:--------:|:--:|:----:|:----:|:----:|:--------:|
-| T1 | 初始 | ×1.0 | ×1.0 | ×1.0 | ×1.0 | — |
-| T2 Elite | Lv.25 | ×1.6 | ×1.6 | ×1.15 | ×0.82 | 解锁，CD 30s |
+| T1 | Start | ×1.0 | ×1.0 | ×1.0 | ×1.0 | — |
+| T2 Elite | Lv.25 | ×1.6 | ×1.6 | ×1.15 | ×0.82 | Unlocked, CD 30s |
 | T3 Legendary | Lv.40 | ×2.2 | ×2.2 | ×1.25 | ×0.70 | CD 15s |
 
-### 升级三选一
+### Level-Up: Pick One of Three
 
-| 类型 | 概率 | 说明 |
+| Type | Probability | Description |
 |------|:----:|------|
-| 获得新武器 | 30% | 有空位且未拥有时，随机获得新武器 |
-| 升级现有武器 | 40% | 随机升级一把未满级武器（伤害↑、冷却↓） |
-| 属性提升 | 剩余 | 见下表 |
+| New Weapon | 30% | If a slot is free and not already owned, randomly grants a new weapon |
+| Upgrade Weapon | 40% | Randomly upgrades a non-max-level weapon (damage ↑, cooldown ↓) |
+| Stat Blessing | Remainder | See table below |
 
-**属性祝福**
+**Stat Blessings**
 
-| 名称 | 效果 |
+| Name | Effect |
 |------|------|
-| Swift Boots | 移速 +10% |
-| Power Core | 伤害倍率 +15% |
-| Magnet | 拾取范围 +20% |
-| Healing Light | 恢复最大 HP 的 30% |
-| Critical Eye | 暴击率 +8% |
-| Life Steal | 吸血 +3% |
+| Swift Boots | Move speed +10% |
+| Power Core | Damage multiplier +15% |
+| Magnet | Pickup range +20% |
+| Healing Light | Restores 30% of max HP |
+| Critical Eye | Crit chance +8% |
+| Life Steal | Lifesteal +3% |
 
 ---
 
-## 敌人与 Boss
+## Enemies & Boss
 
-### 普通敌人
+### Normal Enemies
 
-| 名称 | HP | 速度 | 伤害 | 稀有度 | 特性 |
+| Name | HP | Speed | Damage | Rarity | Trait |
 |------|:--:|:----:|:----:|:------:|------|
-| Slime 史莱姆 | 60 | 60 | 8 | 普通 | — |
-| Bat 蝙蝠 | 20 | 140 | 5 | 普通 | 波浪飞行，集群分离 |
-| Goblin 哥布林 | 120 | 85 | 12 | 普通 | — |
-| Skeleton 骷髅 | 280 | 70 | 15 | 稀有 | — |
-| Ghost 幽灵 | 35 | 120 | 10 | 稀有 | 远程射击 |
-| Flying Eye 飞眼 | 90 | 130 | 10 | 稀有 | 远程射击 |
-| Orc 兽人 | 500 | 55 | 20 | 史诗 | — |
-| Mushroom 蘑菇怪 | 750 | 40 | 20 | 史诗 | 远程射击 |
-| Giant 巨人 | 1400 | 40 | 30 | 传说 | 高血量精英 |
+| Slime | 60 | 60 | 8 | Common | — |
+| Bat | 20 | 140 | 5 | Common | Sine-wave flight, swarm separation |
+| Goblin | 120 | 85 | 12 | Common | — |
+| Skeleton | 280 | 70 | 15 | Rare | — |
+| Ghost | 35 | 120 | 10 | Rare | Ranged attack |
+| Flying Eye | 90 | 130 | 10 | Rare | Ranged attack |
+| Orc | 500 | 55 | 20 | Epic | — |
+| Mushroom | 750 | 40 | 20 | Epic | Ranged attack |
+| Giant | 1400 | 40 | 30 | Legendary | High-HP elite |
 
-> 所有敌人随时间成长：HP **+0.016/s**，速度 **+0.004/s**，伤害 **+0.005/s**
+> All enemies scale over time: HP **+0.016/s**, Speed **+0.004/s**, Damage **+0.005/s**
 
-### Boss — 深渊领主
+### Boss — Abyssal Lord
 
-| 属性 | 数值 |
+| Attribute | Value |
 |------|------|
 | HP | 38,000 |
-| 速度 | 55 |
-| 接触伤害 | 60 |
-| 出场时间 | 游戏开始 **300 秒**（5 分钟） |
+| Speed | 55 |
+| Contact Damage | 60 |
+| Spawn Time | **300 seconds** (5 minutes) into the game |
 
-**三阶段机制**
+**Three-Phase Mechanics**
 
-| 阶段 | HP 区间 | 环形弹幕 | 召唤 | 冲撞 | 特殊技能 |
+| Phase | HP Range | Ring Barrage | Summon | Charge | Special |
 |:----:|:-------:|:--------:|:----:|:----:|----------|
-| P1 | > 66% | 10 发 / 3.5s | 哥布林 ×4 / 6s | — | — |
-| P2 | 33% – 66% | 14 发 / 3.0s | 兽人 ×4 / 5s | 每 5s | 速度 ×1.4 |
-| P3 | < 33% | 20 发 / 2.5s | 骷髅 ×5 / 4s | 每 4s | 扇形射击 9 发 / 3s；冲击波 24 发 / 5.5s；速度 ×1.8 |
+| P1 | > 66% | 10 shots / 3.5s | Goblin ×4 / 6s | — | — |
+| P2 | 33% – 66% | 14 shots / 3.0s | Orc ×4 / 5s | Every 5s | Speed ×1.4 |
+| P3 | < 33% | 20 shots / 2.5s | Skeleton ×5 / 4s | Every 4s | Fan shot 9 / 3s; Shockwave 24 / 5.5s; Speed ×1.8 |
 
 ---
 
-## 操作
+## Controls
 
-| 按键 | 功能 |
+| Key | Action |
 |------|------|
-| `W` `A` `S` `D` | 移动 |
-| `SPACE` | 释放终极技能（T2 解锁） |
-| `P` | 暂停 / 继续 |
-| `ESC` | 返回菜单 / 退出 / 取消武器交换 |
-| `1` `2` `3` | 选择升级卡片 / 武器交换槽位 / 角色 |
-| `ENTER` | 确认 / 开始游戏 |
-| `H` | 查看操作指南 |
-| `L` | 调试用：快速获得大量经验 |
+| `W` `A` `S` `D` | Move |
+| `SPACE` | Use Ultimate Skill (T2+) |
+| `P` | Pause / Resume |
+| `ESC` | Back to menu / Quit / Cancel weapon swap |
+| `1` `2` `3` | Select upgrade card / Weapon swap slot / Character |
+| `ENTER` | Confirm / Start game |
+| `H` | View controls guide |
+| `L` | Debug: quickly gain massive XP |
 
 ---
 
-## 计分
+## Scoring
 
-| 项目 | 分值 |
+| Source | Points |
 |------|------|
-| 生存时间 | 10 分/秒 |
-| 击杀敌人 | 各敌人基础分 × 稀有度倍率 |
-| 击杀 Boss | +5000 |
-| 满血通关 | +2000 |
-| 达到 Lv.25 | 总分 × 2.0 |
-| 达到 Lv.40 | 总分 × 3.0 |
+| Survival time | 10 pts/sec |
+| Enemy kills | Base score per enemy × rarity multiplier |
+| Boss kill | +5000 |
+| Full-HP clear | +2000 |
+| Reach Lv.25 | Total score ×2.0 |
+| Reach Lv.40 | Total score ×3.0 |
 
 ---
 
-## 游戏设置
+## Game Settings
 
-| 设置项 | 可选值 |
+| Setting | Options |
 |--------|--------|
-| 屏幕震动 | ON / OFF |
-| 战斗节奏 | 休闲 (0.82×) / 冒险 (1.0×) / 激烈 (1.22×) |
+| Screen Shake | ON / OFF |
+| Combat Pace | Casual (0.82×) / Adventure (1.0×) / Intense (1.22×) |
 
 ---
 
-## 项目结构
+## Project Structure
 
 ```
 Assignment2/
 ├── README.md
 └── Game-test/
-    ├── src/                          # 游戏源码
-    │   ├── SurvivalGame.java         # 主类 — 渲染、输入、状态机
-    │   ├── GameEngine.java           # 自研引擎基类
-    │   ├── GameConfig.java           # 全局常量配置
-    │   ├── Player.java               # 玩家逻辑
-    │   ├── Enemy.java                # 敌人 + Boss AI
-    │   ├── EnemySpawner.java         # 刷怪控制
-    │   ├── WeaponDef.java            # 武器定义
-    │   ├── WeaponManager.java        # 武器管理
-    │   ├── WeaponDrop.java           # 武器掉落
-    │   ├── WeaponInstance.java       # 武器实例
-    │   ├── WeaponRarity.java         # 武器稀有度
-    │   ├── UpgradeSystem.java        # 升级选择
-    │   ├── UpgradeDef.java           # 升级选项定义
-    │   ├── CharacterProgression.java # 位阶数值
-    │   ├── CharacterDef.java         # 角色定义
-    │   ├── UltimateSkill.java        # 终极技能
-    │   ├── CollisionSystem.java      # 碰撞检测
-    │   ├── SpatialGrid.java          # 空间网格
-    │   ├── Projectile.java           # 弹幕
-    │   ├── Pickup.java               # 掉落物
-    │   ├── VfxManager.java           # 粒子特效
-    │   ├── Particle.java             # 粒子
-    │   ├── FloatingText.java         # 浮动文字
-    │   ├── Camera.java               # 镜头跟随
-    │   ├── GameMap.java              # 地图生成
-    │   ├── Obstacle.java             # 障碍物
-    │   ├── AudioManager.java         # 音频管理
-    │   ├── SpriteManager.java        # 精灵渲染
-    │   ├── AssetLibrary.java         # 素材库
-    │   └── AssetLoader.java          # 素材加载
-    ├── assets/                       # 图片素材（精灵图、图标等）
-    ├── audio/                        # 音效与 BGM（.wav）
-    └── docs/                         # 文档（游戏介绍 PPT 等）
+    ├── src/                          # Game source code
+    │   ├── SurvivalGame.java         # Main class — rendering, input, state machine
+    │   ├── GameEngine.java           # Custom engine base class
+    │   ├── GameConfig.java           # Global constants & configuration
+    │   ├── Player.java               # Player logic
+    │   ├── Enemy.java                # Enemy + Boss AI
+    │   ├── EnemySpawner.java         # Spawn control
+    │   ├── WeaponDef.java            # Weapon definitions
+    │   ├── WeaponManager.java        # Weapon management
+    │   ├── WeaponDrop.java           # Weapon drops
+    │   ├── WeaponInstance.java       # Weapon instances
+    │   ├── WeaponRarity.java         # Weapon rarity
+    │   ├── UpgradeSystem.java        # Upgrade selection
+    │   ├── UpgradeDef.java           # Upgrade option definitions
+    │   ├── CharacterProgression.java # Tier stat scaling
+    │   ├── CharacterDef.java         # Character definitions
+    │   ├── UltimateSkill.java        # Ultimate skills
+    │   ├── CollisionSystem.java      # Collision detection
+    │   ├── SpatialGrid.java          # Spatial grid
+    │   ├── Projectile.java           # Projectiles
+    │   ├── Pickup.java               # Pickup items
+    │   ├── VfxManager.java           # Particle effects
+    │   ├── Particle.java             # Particles
+    │   ├── FloatingText.java         # Floating text
+    │   ├── Camera.java               # Camera follow
+    │   ├── GameMap.java              # Map generation
+    │   ├── Obstacle.java             # Obstacles
+    │   ├── AudioManager.java         # Audio management
+    │   ├── SpriteManager.java        # Sprite rendering
+    │   ├── AssetLibrary.java         # Asset library
+    │   └── AssetLoader.java          # Asset loading
+    ├── assets/                       # Image assets (sprites, icons, etc.)
+    ├── audio/                        # Sound effects & BGM (.wav)
+    └── docs/                         # Documentation (game intro PPT, etc.)
 ```
