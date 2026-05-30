@@ -1,6 +1,6 @@
 import java.awt.Color;
 import java.awt.Image;
-
+// Jiaxu Wang (24009377)  Jiaheng Liu (24009483)  Angze Song (24009333)   Xiao Wu (24009458)
 public class Obstacle extends Entity {
     public static final int ROCK = 0;
     public static final int TREE = 1;

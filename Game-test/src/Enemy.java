@@ -1,5 +1,5 @@
 import java.awt.Color;
-
+// Jiaxu Wang (24009377)  Jiaheng Liu (24009483)  Angze Song (24009333)   Xiao Wu (24009458)
 public class Enemy extends Entity {
     public static final int SLIME = 0;
     public static final int BAT = 1;

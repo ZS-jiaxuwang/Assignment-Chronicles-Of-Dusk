@@ -1,7 +1,7 @@
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.HashMap;
-
+// Jiaxu Wang (24009377)  Jiaheng Liu (24009483)  Angze Song (24009333)   Xiao Wu (24009458)
 public class AssetLoader {
     private static final HashMap<String, BufferedImage> cache = new HashMap<String, BufferedImage>();
     private static final HashMap<String, Boolean> missing = new HashMap<String, Boolean>();

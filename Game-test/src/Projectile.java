@@ -1,6 +1,6 @@
 import java.awt.Color;
 import java.util.HashSet;
-
+// Jiaxu Wang (24009377)  Jiaheng Liu (24009483)  Angze Song (24009333)   Xiao Wu (24009458)
 public class Projectile extends Entity {
     public static final int TYPE_ARROW = 0;
     public static final int TYPE_SWORD_WAVE = 1;

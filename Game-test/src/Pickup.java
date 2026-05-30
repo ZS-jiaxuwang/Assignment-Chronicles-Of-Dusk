@@ -1,5 +1,5 @@
 import java.awt.Color;
-
+// Jiaxu Wang (24009377)  Jiaheng Liu (24009483)  Angze Song (24009333)   Xiao Wu (24009458)
 public class Pickup extends Entity {
     public static final int TYPE_XP = 0;
     public static final int TYPE_WEAPON = 1;

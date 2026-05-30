@@ -1,6 +1,6 @@
 import java.util.ArrayList;
 import java.util.HashMap;
-
+// Jiaxu Wang (24009377)  Jiaheng Liu (24009483)  Angze Song (24009333)   Xiao Wu (24009458)
 public class SpatialGrid {
     private final double worldWidth;
     private final double worldHeight;

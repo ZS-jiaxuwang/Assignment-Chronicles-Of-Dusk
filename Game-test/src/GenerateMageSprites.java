@@ -5,7 +5,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
-
+// Jiaxu Wang (24009377)  Jiaheng Liu (24009483)  Angze Song (24009333)   Xiao Wu (24009458)
 /**
  * Generates pixel-art mage sprite sheets.
  * Format: 64x64 frames, 4 rows (DOWN/LEFT/RIGHT/UP), horizontal strips.

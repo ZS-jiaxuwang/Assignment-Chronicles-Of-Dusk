@@ -2,7 +2,7 @@ import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-
+// Jiaxu Wang (24009377)  Jiaheng Liu (24009483)  Angze Song (24009333)   Xiao Wu (24009458)
 public class SurvivalGame extends GameEngine {
     private static final String FONT_TITLE = "Serif";
     private static final String FONT_BODY = "Dialog";

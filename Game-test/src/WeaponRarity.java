@@ -1,5 +1,5 @@
 import java.awt.Color;
-
+// Jiaxu Wang (24009377)  Jiaheng Liu (24009483)  Angze Song (24009333)   Xiao Wu (24009458)
 public enum WeaponRarity {
     COMMON(1.0, 0, new Color(200, 200, 200), 50),
     RARE(1.2, 1, new Color(80, 160, 255), 30),

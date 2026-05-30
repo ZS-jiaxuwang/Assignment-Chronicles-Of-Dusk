@@ -1,5 +1,5 @@
 import java.util.ArrayList;
-
+// Jiaxu Wang (24009377)  Jiaheng Liu (24009483)  Angze Song (24009333)   Xiao Wu (24009458)
 public class WeaponManager {
     private final SurvivalGame game;
     private final ArrayList<WeaponInstance> weapons = new ArrayList<WeaponInstance>();

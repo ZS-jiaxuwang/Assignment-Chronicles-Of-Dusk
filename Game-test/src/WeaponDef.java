@@ -1,5 +1,5 @@
 import java.awt.Color;
-
+// Jiaxu Wang (24009377)  Jiaheng Liu (24009483)  Angze Song (24009333)   Xiao Wu (24009458)
 public class WeaponDef {
     public static final int SWORD = 0;
     public static final int MAGIC_WAND = 1;

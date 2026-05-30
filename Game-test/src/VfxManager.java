@@ -1,6 +1,6 @@
 import java.awt.Color;
 import java.util.ArrayList;
-
+// Jiaxu Wang (24009377)  Jiaheng Liu (24009483)  Angze Song (24009333)   Xiao Wu (24009458)
 public class VfxManager {
     private final SurvivalGame game;
     private final ArrayList<Particle> particles = new ArrayList<Particle>();
